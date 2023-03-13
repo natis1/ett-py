@@ -1,5 +1,6 @@
 import sqlite3
 import uuid
+import time
 
 from . import ett
 
@@ -15,6 +16,9 @@ def init_db():
                 "CurrentGold, Games, Items, Transactions, AncestryFeats, ClassFeats, ArchetypeFeats, SkillFeats, "
                 "GeneralFeats, Enterer, PRIMARY KEY(PlayerName, Name))")
     cur.execute("CREATE TABLE IF NOT EXISTS games(ID, Name, Date, Enterer, Time, GameLevel, Items, PRIMARY KEY(ID))")
+    # Events holds all games, transactions, and adjustments that happen to a player.
+    cur.execute("CREATE TABLE IF NOT EXISTS events(EventID, PlayerName, CharacterName, EventDate, TimeStamp, "
+                "XPAdjust, KarmaAdjust, GoldAdjust, ItemsBought, ItemsLost, Comment, PRIMARY KEY(EventID))")
     cur.execute("CREATE TABLE IF NOT EXISTS gamePlayers(GameID, PlayerName, CharacterName, PlayerLevel, TimePlayed, "
                 "TTUp, GainedKarma, PRIMARY KEY(GameID, Player))")
     cur.execute("CREATE TABLE IF NOT EXISTS transactions(ID, PlayerName, CharacterName, ItemsBought, "
@@ -85,10 +89,12 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
     con.commit()
 
 
-def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.EttPlayer], enterer):
+def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.EttPlayer],
+             continuation, commment, enterer):
     id = uuid.uuid4()
     game_level = ett.ett_party_level(players)
     items_text = ett.pf2e_element_list_to_string(items)
+    timestamp = time.time()
     cur.execute("""
             INSERT INTO games VALUES
             (?, ?, ?, ?, ?, ?, ?)
@@ -105,11 +111,8 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             if pl_stats is None:
                 continue
             expected_level = (pl_stats[0] / 12) + 1
-            tt_up = (expected_level < pl.player_level)
-            cur.execute("""
-                INSERT INTO gamePlayers VALUES
-                (?, ?, ?, ?, ?, ?, ?)
-            """, (id, pl.player_name, pl.name, pl.player_level, pl.time_played, tt_up, pl.gained_karma))
+            tt_up = (expected_level < pl.player_level) and (not continuation)
+            net_karma = pl.gained_karma - tt_up
             if not pl_stats[1]:
                 pl_stats[1] = 0
             if not pl_stats[2]:
@@ -124,4 +127,8 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             cur.execute("""
                 UPDATE characters SET XP = ?, ExpectedGold = ?, CurrentGold = ? where PlayerName = ? and Name = ?
             """, (total_xp, expected_gold, current_gold, pl.player_name, pl.name))
+            cur.execute("""
+                INSERT INTO events VALUES
+                (?, ?, ?, ?, ?, ?, ?)
+            """, (id, pl.player_name, pl.name, date, timestamp, xp_added, net_karma, adventure_gold, , , commment))
             con.commit()

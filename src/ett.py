@@ -17,6 +17,9 @@ class EttPlayer:
     player_level: int
     time_played: float
     gained_karma: int
+    items_added: list[Pf2eElement]
+    items_removed: list[Pf2eElement]
+
 
 def ett_xp_rate(player_level, party_level):
     # GMs get 1.5x xp regardless. GM "Players" have a level of 0
