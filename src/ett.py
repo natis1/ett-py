@@ -8,17 +8,17 @@ class Pf2eElement:
     level: int = 0
     cost: float = 0.0
     rarity: int = 0
+    quantity: int = 1
 
 
 @dataclass
-class EttPlayer:
+class EttGamePlayer:
     player_name: str
     name: str
     player_level: int
     time_played: float
     gained_karma: int
-    items_added: list[Pf2eElement]
-    items_removed: list[Pf2eElement]
+    alive: bool
 
 
 def ett_xp_rate(player_level, party_level):
@@ -66,7 +66,56 @@ def ett_leveling_karma(current_xp, xp_to_add):
     return 0
 
 
-def ett_party_level(players: list[EttPlayer]):
+# Get hours of community service to revive character
+def ett_died_cs(player: EttGamePlayer, true_level, ironman):
+    default_rate = 1
+    default_max = 8
+    # If you are time traveling via karma rewards your level is considered to be the average of the level you played as
+    # and the level your "true character" actually is (round down)
+    ett_level = math.floor((player.player_level + true_level) / 2)
+    if ironman == 1 or ironman == 2:
+        return 9999
+    if ironman == 3:
+        return max(default_rate * ett_level, default_max)
+    return min(default_max, default_rate * ett_level)
+
+
+# This does three things. 1. it removes any NON RARE unlocks at or below the PC level
+# 2. it appends any NEW unlocks to the list if applicable.
+# 3. it removes any items from the remove_unlocks list
+def ett_parse_unlocks(cur_unlocks: list[Pf2eElement], new: list[Pf2eElement], remove: list[Pf2eElement], pl_level):
+    # Remove non rare unlocks at or below the PC level
+    items = []
+    for i in cur_unlocks:
+        if i.rarity != 2 and i.level <= pl_level:
+            continue
+        items += i
+
+    for i in new:
+        # Do not add redundant items that do not need unlocking
+        if i.rarity != 2 and i.level <= pl_level:
+            continue
+        exists = False
+        for j in items:
+            if j.name == i.name:
+                exists = True
+                break
+        if not exists:
+            items += i
+
+    # Remove any items to remove with this disgustingly inefficient loop.
+    items2 = []
+    for j in items:
+        keep_item = True
+        for i in remove:
+            if i.name == j.name:
+                keep_item = False
+        if keep_item:
+            items2 += j
+    return items2
+
+
+def ett_party_level(players: list[EttGamePlayer]):
     power_levels = [0, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536]
     apl = 0
     non_gm_players = len(players) - 1
@@ -92,7 +141,7 @@ def pf2e_element_list_to_string(elements: list[Pf2eElement]):
     output_str = ''
     for element_index in range(len(elements)):
         i = elements[element_index]
-        output_str += i.name + "|" + i.level + "|" + i.cost + "|" + i.rarity
+        output_str += i.name + "|" + i.level + "|" + i.cost + "|" + i.rarity + "|" + i.quantity
         if element_index < (len(elements) - 1):
             output_str += "\n"
     return output_str
@@ -102,6 +151,6 @@ def string_to_pf2e_element_list(elements: str):
     e_str = elements.splitlines(False)
     element_list = []
     for line in e_str:
-        attribs = line.split("|")
-        element_list.append(Pf2eElement(attribs[0], int(attribs[1]), float(attribs[2]), int(attribs[3])))
+        a = line.split("|")
+        element_list.append(Pf2eElement(a[0], int(a[1]), float(a[2]), int(a[3]), int(a[4])))
     return element_list
