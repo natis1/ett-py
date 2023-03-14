@@ -27,7 +27,7 @@ def init_db():
 def get_player(name):
     cur.execute("""
         SELECT PlayerName FROM players WHERE PlayerName = ?
-    """, (name, ))
+    """, (name,))
     return cur.fetchone()
 
 
@@ -81,8 +81,9 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
     print("Adding PC " + name)
     cur.execute("""
         INSERT INTO characters VALUES
-        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, 0, 0, '', '', ?, ?)""",
-        (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp, ironman, enterer))
+        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, 0, 0, '', '', '', ?, ?)""",
+                (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp, ironman,
+                 enterer))
     con.commit()
 
 
@@ -127,7 +128,7 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             # This means the PC is invalid
             if pl_stats is None:
                 print("ERROR: Character with player name: " + pl.player_name + " "
-                      "and name: " + pl.name + " does not exist!")
+                                                                               "and name: " + pl.name + " does not exist!")
                 continue
             cur.execute("""
                             SELECT Karma from players WHERE PlayerName = ?
@@ -149,7 +150,7 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             # subtract any community service you need to do
             cs_remaining = pl_stats[4]
             if not (pl_stats[4] == '' or pl_stats[4] == 0):
-                if (pl_stats[4] - pl.time_played) <= 0 :
+                if (pl_stats[4] - pl.time_played) <= 0:
                     cs_remaining = 0
                     pl.time_played = pl.time_played - pl_stats[4]
                 else:

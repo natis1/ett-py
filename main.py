@@ -3,7 +3,7 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import src
-
+import website
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
@@ -19,5 +19,8 @@ if __name__ == '__main__':
     src.database.add_character("Pine", "SelfAdded", "Autumn", "Leshy", "Back-Alley Doctor", "Druid",
                                "Leaf Leshy", 140687, 'Absalom', 0)
     src.database.add_xp_to_player("Pine", 42)
+
+    app = website.create_app()
+    app.run(debug=True)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
