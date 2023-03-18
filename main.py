@@ -4,6 +4,9 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import src
 import website
+import os
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.

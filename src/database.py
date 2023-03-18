@@ -1,34 +1,95 @@
 import math
+import queue
 import sqlite3
+import threading
+import traceback
 import uuid
 import time
+from enum import Enum
 
 from . import ett
 
-con = sqlite3.connect("ett.db")
-cur = con.cursor()
+
+class Fetch(Enum):
+    NONE = 0
+    ONE = 1
+    ALL = 2
+
+
+work_queue = queue.Queue()
+
+
+def sqlite_worker():
+    con = sqlite3.connect("ett.db")
+    cur = con.cursor()
+    while True:
+        try:
+            (sql, params, fetch_one), result_queue = work_queue.get()
+            res = None
+            print(sql.strip(), params, fetch_one)
+            if params is not None:
+                res = cur.execute(sql, params)
+            else:
+                res = cur.execute(sql)
+            if fetch_one == Fetch.ONE:
+                result_queue.put(cur.fetchone())
+            elif fetch_one == Fetch.ALL:
+                result_queue.put(cur.fetchall())
+            else:
+                result_queue.put(res)
+            con.commit()
+        except Exception as e:
+            traceback.print_exc()
+
+
+threading.Thread(target=sqlite_worker, daemon=True).start()
+
+
+def sql_exec(sql, params=None, fetch: Fetch = Fetch.NONE) -> sqlite3.Cursor:
+    # you might not really need the results if you only use this
+    # for writing unless you use something like https://www.sqlite.org/lang_returning.html
+    result_queue = queue.Queue()
+    work_queue.put(((sql, params, fetch), result_queue))
+    return result_queue.get()
+
+
+# WARNING: ONLY search_for can be untrusted. ALL OTHERS MUST BE HARDCODED.
+def get_code(table: str, key: str, search: str, search_for: str):
+    v = sql_exec(f"""
+            SELECT {key} FROM {table} WHERE {search} = ?
+    """, (search_for,), Fetch.ONE)
+    if v is not None:
+        return v[0]
+    return None
+
+
+# WARNING: ONLY search_for can be untrusted. ALL OTHERS MUST BE HARDCODED.
+def get_row(table: str, search: str, search_for: str):
+    return sql_exec(f"""
+            SELECT * FROM {table} WHERE {search} = ?
+    """, (search_for,), Fetch.ONE)
 
 
 def init_db():
-    cur.execute("CREATE TABLE IF NOT EXISTS players(PlayerName, Karma, Characters, BonusXP, Upgrades, Enterer, "
-                "PRIMARY KEY(PlayerName))")
+    sql_exec("CREATE TABLE IF NOT EXISTS players(PlayerName, Karma, Characters, BonusXP, Upgrades, Enterer, "
+             "PRIMARY KEY(PlayerName))")
     # Unlocks = items unlocked by player to be purchased
     # Rewards = karma spent on the PC
-    cur.execute("CREATE TABLE IF NOT EXISTS characters(PlayerName, Name, Ancestry, Background, Class, Heritage, "
-                "Unlocks, Rewards, Home, Pathbuilder, Comments, CommunityService, PDFs, FVTTs, XP, ExpectedGold, "
-                "CurrentGold, Games, Items, Rares, Ironman, Enterer, PRIMARY KEY(PlayerName, Name))")
-    cur.execute("CREATE TABLE IF NOT EXISTS games(ID, Name, Date, Enterer, Time, GameLevel, Items, PRIMARY KEY(ID))")
+    sql_exec("CREATE TABLE IF NOT EXISTS characters(PlayerName, Name, Ancestry, Background, Class, Heritage, "
+             "Unlocks, Rewards, Home, Pathbuilder, Comments, CommunityService, PDFs, FVTTs, XP, ExpectedGold, "
+             "CurrentGold, Games, Items, Rares, Ironman, Enterer, PRIMARY KEY(PlayerName, Name))")
+    sql_exec("CREATE TABLE IF NOT EXISTS games(ID, Name, Date, Enterer, Time, GameLevel, Items, PRIMARY KEY(ID))")
     # Events holds all games, transactions, and adjustments that could happen to a player.
-    cur.execute("CREATE TABLE IF NOT EXISTS events(ID, TimeStamp, PlayerName, CharacterName, EventDate, "
-                "XPAdjust, KarmaAdjust, GoldAdjust, ItemsBought, ItemsLost, Unlocks, Rewards, CommunityService, "
-                "Comment, PRIMARY KEY(ID))")
+    sql_exec("CREATE TABLE IF NOT EXISTS events(ID, TimeStamp, PlayerName, CharacterName, EventDate, "
+             "XPAdjust, KarmaAdjust, GoldAdjust, ItemsBought, ItemsLost, Unlocks, Rewards, CommunityService, "
+             "Comment, PRIMARY KEY(ID))")
+    sql_exec("CREATE TABLE IF NOT EXISTS historians(OathID, Email, Name, permissions, PRIMARY KEY(OathID))")
 
 
 def get_player(name):
-    cur.execute("""
+    return sql_exec("""
         SELECT PlayerName FROM players WHERE PlayerName = ?
-    """, (name,))
-    return cur.fetchone()
+    """, (name,), Fetch.ONE)
 
 
 def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0):
@@ -37,35 +98,27 @@ def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0)
         return False
 
     print("Adding Character " + name)
-
-    cur.execute("""
+    sql_exec("""
         INSERT INTO players VALUES
         (?, ?, '', ?, '', ?)
     """, (name, starting_karma, starting_xp, enterer))
-    con.commit()
 
 
 def add_xp_to_player(name, xp: float):
-    pl = get_player(name)
-    if pl is None:
+    existing_xp = get_code("players", "BonusXP", "PlayerName", name)
+    if existing_xp is None:
         print("Player does not exist " + name)
         return False
-    cur.execute("""
-            SELECT BonusXP FROM players WHERE PlayerName = ? 
-        """, (name,))
-    existing_xp = cur.fetchone()[0]
     new_xp = existing_xp + xp
-    cur.execute("""
+    sql_exec("""
             UPDATE players SET BonusXP = ? where PlayerName = ?
     """, (new_xp, name))
-    con.commit()
 
 
 def get_character(player_name, name):
-    cur.execute("""
+    return sql_exec("""
         SELECT PlayerName FROM characters WHERE PlayerName = ? and Name = ?
-    """, (player_name, name))
-    return cur.fetchone()
+    """, (player_name, name), Fetch.ONE)
 
 
 def add_character(player_name, enterer, name, ancestry, background, pc_class, heritage, pathbuilder, ironman, home='',
@@ -79,12 +132,11 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
         return False
 
     print("Adding PC " + name)
-    cur.execute("""
+    sql_exec("""
         INSERT INTO characters VALUES
         (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, 0, 0, '', '', '', ?, ?)""",
-                (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp, ironman,
-                 enterer))
-    con.commit()
+             (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp, ironman,
+              enterer))
 
 
 # Add item to the player's inventory, spending any money as appropriate. This ALSO
@@ -112,7 +164,7 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             rare_items.append(i)
     rare_text = ett.pf2e_element_list_to_string(rare_items)
     timestamp = time.time()
-    cur.execute("""
+    sql_exec("""
             INSERT INTO games VALUES
             (?, ?, ?, ?, ?, ?, ?)
         """, (uuid.uuid4(), name, date, enterer, time, game_level, items_text))
@@ -120,20 +172,16 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
         if pl.player_level == 0:
             add_xp_to_player(pl.player_name, pl.time_played * 1.5)
         else:
-            cur.execute("""
+            pl_stats = sql_exec("""
                 SELECT XP, ExpectedGold, CurrentGold, Unlocks, CommunityService, Ironman
                 from characters WHERE PlayerName = ? and Name = ?
-            """, (pl.player_name, pl.name))
-            pl_stats = cur.fetchone()
+            """, (pl.player_name, pl.name), Fetch.ONE)
             # This means the PC is invalid
             if pl_stats is None:
-                print("ERROR: Character with player name: " + pl.player_name + " "
-                                                                               "and name: " + pl.name + " does not exist!")
+                print("ERROR: Character with player name: " + pl.player_name +
+                      " and name: " + pl.name + " does not exist!")
                 continue
-            cur.execute("""
-                            SELECT Karma from players WHERE PlayerName = ?
-                        """, pl.player_name)
-            cur_karma = cur.fetchone()
+            cur_karma = get_code("players", "Karma", "PlayerName", pl.player_name)
             # This means the player is invalid
             if cur_karma is None:
                 print("ERROR: Player with name: " + pl.player_name + " does not exist!")
@@ -172,14 +220,14 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             if not pl.alive:
                 cs_remaining = ett.ett_died_cs(pl, (1 + math.floor(total_xp / 12)), pl_stats[5])
             # Update the player with the new game information
-            cur.execute("""
+            sql_exec("""
                 UPDATE characters SET XP = ?, ExpectedGold = ?, CurrentGold = ?, Unlocks = ?, CommunityService = ?
                 where PlayerName = ? and Name = ?
             """, (total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name))
-            cur.execute("""
+            sql_exec("""
                 UPDATE players SET Karma = ? where PlayerName = ?
             """, (total_karma, pl.player_name))
-            cur.execute("""
+            sql_exec("""
                 INSERT INTO events VALUES
                 (?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?)
             """, (uuid.uuid4(), timestamp, pl.player_name, pl.name, date, xp_added, net_karma, adventure_gold,
@@ -188,16 +236,14 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             print("total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name")
             print(total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name)
             print("Karma: " + str(total_karma))
-            con.commit()
 
 
 def buy_items(player_name, name, date, comments, items: list[ett.Pf2eElement], price_factor: float = 1.0):
     comments = "BUY EVENT: " + comments
-    cur.execute("""
+    pl_stats = sql_exec("""
         SELECT CurrentGold, Unlocks, Items, XP
         from characters WHERE PlayerName = ? and Name = ?
-    """, (player_name, name))
-    pl_stats = cur.fetchone()
+    """, (player_name, name), Fetch.ONE)
     if pl_stats is None:
         print("ERROR: Character: " + player_name + ", " + name + "does not exist!")
         return
@@ -222,11 +268,11 @@ def buy_items(player_name, name, date, comments, items: list[ett.Pf2eElement], p
                 temp_item.quantity += i.quantity
         output_items += temp_item
     items_str = ett.pf2e_element_list_to_string(output_items)
-    cur.execute("""
+    sql_exec("""
                     UPDATE characters SET CurrentGold = ?, Unlocks = ?, Items = ?
                     where PlayerName = ? and Name = ?
                 """, (final_money, unlocks_str, items_str, player_name, name))
-    cur.execute("""
+    sql_exec("""
         INSERT INTO events VALUES
         (?, ?, ?, ?, ?, 0, 0, 0, ?, '', ?, '', ?)
     """, (uuid.uuid4(), timestamp, player_name, name, date,
@@ -234,18 +280,16 @@ def buy_items(player_name, name, date, comments, items: list[ett.Pf2eElement], p
     print("Updated player with the following information: ")
     print("final_money, unlocks_str, items_str, player_name, name")
     print(final_money, unlocks_str, items_str, player_name, name)
-    con.commit()
 
 
 # For selling items. Also for using items in an adventure
 # set price factor to 0 if you are using an item and price factor to
 def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], price_factor: float = 0.5):
     comments = "SELL EVENT: " + comments
-    cur.execute("""
+    pl_stats = sql_exec("""
             SELECT CurrentGold, Items
             from characters WHERE PlayerName = ? and Name = ?
-        """, (player_name, name))
-    pl_stats = cur.fetchone()
+        """, (player_name, name), Fetch.ONE)
     if pl_stats is None:
         print("ERROR: Character: " + player_name + ", " + name + "does not exist!")
         return
@@ -272,11 +316,11 @@ def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], 
 
     final_str = ett.pf2e_element_list_to_string(final_items)
     final_gold = cur_gold + gold_sold
-    cur.execute("""
+    sql_exec("""
                     UPDATE characters SET CurrentGold = ?, Items = ?
                     where PlayerName = ? and Name = ?
                 """, (final_gold, final_str, player_name, name))
-    cur.execute("""
+    sql_exec("""
             INSERT INTO events VALUES
             (?, ?, ?, ?, ?, 0, 0, 0, '', ?, '', '', ?)
         """, (uuid.uuid4(), timestamp, player_name, name, date,
@@ -284,4 +328,3 @@ def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], 
     print("Updated player with the following information: ")
     print("final_gold, final_str, items sold, player_name, name")
     print(final_gold, final_str, ett.pf2e_element_list_to_string(items), player_name, name)
-    con.commit()
