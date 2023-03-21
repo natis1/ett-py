@@ -1,8 +1,64 @@
-from flask import Blueprint, render_template
-from flask_login import current_user
+import math
+
+from flask import Blueprint, render_template, request, redirect
+from flask_login import current_user, login_required
+from src import database
 views = Blueprint('views', __name__)
 
 
 @views.route('/')
 def home():
     return render_template("home.html", user=current_user)
+
+
+@views.route('/players')
+def players():
+    pl = database.get_table("Players", "PlayerName", 0, 15)
+    print(pl)
+    return render_template("players.html", user=current_user, players=pl)
+
+
+@views.route('/add_player', methods=['GET'])
+@login_required
+def add_player():
+    return render_template("add_player.html", user=current_user)
+
+
+@views.route('/add_player', methods=['POST'])
+@login_required
+def add_player_post():
+    print(request.form)
+    data = request.form
+    karma = data.get('karma')
+    if karma == '':
+        karma = 0
+    else:
+        karma = int(karma)
+    xp = data.get('xp')
+    if xp == '':
+        xp = 0
+    else:
+        xp = float(xp)
+    database.add_player(data.get('playerName'), current_user.name, karma, xp)
+    return redirect('/players')
+
+
+@views.route('/characters')
+def characters():
+    ch = database.get_table("Characters", ["PlayerName", "Name"], 0, 15)
+    print(ch)
+    return render_template("characters.html", user=current_user, characters=ch)
+
+
+@views.route('/edit_character', methods=['POST'])
+@login_required
+def edit_character():
+    print(request.form)
+    print("Hello Editing Character")
+    return render_template("edit_character.html", user=current_user)
+
+
+@views.route('/add_character')
+@login_required
+def add_character():
+    return render_template("add_character.html", user=current_user)

@@ -70,6 +70,31 @@ def get_row(table: str, search: str, search_for: str):
     """, (search_for,), Fetch.ONE)
 
 
+# ONLY OFFSET AND LIMIT ARE ALLOWED TO BE UNSAFE HERE
+def get_table(table: str, order_by, offset: int = 0, limit: int = 0):
+    # Is this even needed? I have no idea.
+    if (not isinstance(offset, int)) or (not isinstance(limit, int)):
+        print("ERROR: ATTEMPTED POSSIBLE SQL INJECTION FROM ", offset, limit)
+        return []
+
+    qry = f'SELECT * FROM {table}'
+    if isinstance(order_by, str):
+        qry += f' ORDER BY {order_by}'
+    elif isinstance(order_by, list) and len(order_by) > 0:
+        append = order_by[0]
+        for i in range(1, len(order_by)):
+            append += ',' + order_by[i]
+        qry += f' ORDER BY {append}'
+
+    if offset != 0:
+        qry += f' OFFSET {offset}'
+
+    if limit != 0:
+        qry += f' LIMIT {limit}'
+
+    return sql_exec(qry, None, Fetch.ALL)
+
+
 def init_db():
     sql_exec("CREATE TABLE IF NOT EXISTS players(PlayerName, Karma, Characters, BonusXP, Upgrades, Enterer, "
              "PRIMARY KEY(PlayerName))")

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Players{% endblock %}
+{% block content %}
+<h1>Players</h1>
+<br/>
+<ul class="list-group list-group-flush" id="players">
+    {% for player in players %}
+        <li class="list-group-item">{{ player[0] }} </li>
+    {% endfor %}
+</ul>
+<br/>
+{% if user.is_authenticated %}
+<form action="/add_player">
+    <button type="submit" class="btn btn-primary">Add Player</button>
+</form>
+{% endif %}
+{% endblock %}
