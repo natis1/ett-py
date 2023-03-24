@@ -57,6 +57,7 @@ def ett_gold_add_xp(current_xp, xp_to_add):
         # Level up our character so we can get the higher gold rates next time
         xp_to_add -= xp_to_next
         current_xp += xp_to_next
+    return 0
 
 
 def ett_leveling_karma(current_xp, xp_to_add):

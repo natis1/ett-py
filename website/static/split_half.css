@@ -1,0 +1,12 @@
+.ettrow {
+  display: flex;
+  margin-left: -15px;
+  margin-right: -15px;
+  margin-bottom: 5px;
+  margin-top: 5px;
+}
+
+.column {
+  flex: 50%;
+  line-height: 30px;
+}

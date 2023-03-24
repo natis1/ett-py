@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Adventures{% endblock %}
+{% block content %}
+<h1>Adventure Sessions</h1>
+<br/>
+<table class="table table-sm">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">Date</th>
+        <th scope="col">Run By</th>
+        <th scope="col">Length (H)</th>
+        <th scope="col">Level</th>
+        {% if user.is_authenticated %}
+        <th scope="col">Edit</th>
+        {% endif %}
+    </tr>
+    </thead>
+    <tbody>
+    {% for a in adventures %}
+    <tr>
+        <td>{{ a[1] }} </td>
+        <td>{{ a[2] }} </td>
+        <td>{{ a[7] }} </td>
+        <td>{{ a[4] }} </td>
+        <td>{{ a[5] }} </td>
+        {% if user.is_authenticated %}
+        <form action='/edit_adventure' method="POST">
+            <td>
+                <button type="submit" class="btn btn-primary"
+                        id="id" name="id" value="{{ a[0] }}">Edit</button></td>
+        </form>
+        {% endif %}
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% if user.is_authenticated %}
+<form action="/add_adventure">
+    <button type="submit" class="btn btn-primary">Add Adventure Session</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -20,7 +20,7 @@ if __name__ == '__main__':
     src.database.add_player("Pine", "SelfAdded", 2, 0)
     src.database.add_player("SuperPIne", "lol", 0, 5.02)
     src.database.add_character("Pine", "SelfAdded", "Autumn", "Leshy", "Back-Alley Doctor", "Druid",
-                               "Leaf Leshy", 140687, 'Absalom', 0)
+                               "Leaf Leshy", 'https://meme.com/memes', 0, 'Absalom', 0)
     src.database.add_xp_to_player("Pine", 42)
 
     app = website.create_app()

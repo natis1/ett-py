@@ -1,5 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Add Character{% endblock %}
 {% block content %}
-<h1>Add Character</h1>
+<form method="POST">
+    <div class="form-group container" style="max-width:600px;">
+        <h1>Add Character</h1>
+
+        <label for="playerName">Player Name</label>
+        <select class="form-control" id="playerName" name="playerName">
+            {% for player in players %}
+            <option>{{ player[0] }} </option>
+            {% endfor %}
+        </select>
+
+        <label for="name">Character Name</label>
+        <input class="form-control" name="name" id="name" maxlength="32"
+               minlength="2" placeholder="Puss in Boots" required>
+        <label for="ancestry">Ancestry</label>
+        <input class="form-control" name="ancestry" id="ancestry" maxlength="32"
+               minlength="2" placeholder="Catfolk" required>
+        <label for="heritage">Heritage</label>
+        <input class="form-control" name="heritage" id="heritage" maxlength="32"
+               minlength="2" placeholder="Hunting" required>
+        <label for="background">Background</label>
+        <input class="form-control" name="background" id="background" maxlength="32"
+               minlength="2" placeholder="Entertainer" required>
+        <label for="class">Class</label>
+        <input class="form-control" name="class" id="class" maxlength="32"
+               minlength="2" placeholder="Swashbuckler" required>
+        <label for="pathbuilder">Pathbuilder URL</label>
+        <input class="form-control" name="pathbuilder" id="pathbuilder"
+               type="url" placeholder="https://pathbuilder2e.com/json.php?id=123456">
+        <label for="ironman">Ironman Mode</label>
+        <select class="form-control" id="ironman" name="ironman" required>
+            <option value="0">None</option>
+            <option value="1">Permadeath (A)</option>
+            <option value="2">No Community Service (B)</option>
+            <option value="3">Longer Community Service (C)</option>
+        </select>
+        <label for="home">Home</label>
+        <input class="form-control" name="home" id="home" maxlength="32"
+               minlength="2" placeholder="Far Far Away" required>
+        <label for="xp">Starting XP</label>
+        <input class="form-control" step="0.01" type="number" id="xp" name="xp" min="0" max="8000" placeholder="0">
+    </div>
+    <div align="center">
+        <button type="submit" class="btn btn-primary">Add Player</button>
+    </div>
+</form>
+
 {% endblock %}

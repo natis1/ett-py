@@ -61,4 +61,34 @@ def edit_character():
 @views.route('/add_character')
 @login_required
 def add_character():
-    return render_template("add_character.html", user=current_user)
+    pl = database.get_table("Players", "PlayerName")
+    return render_template("add_character.html", user=current_user, players=pl)
+
+
+@views.route('/add_character', methods=['POST'])
+@login_required
+def add_character_post():
+    print(request.form)
+    data = request.form
+    xp = data.get('xp')
+    if xp == '':
+        xp = 0
+    else:
+        xp = float(xp)
+    database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
+                           data.get("background"), data.get("class"), data.get("heritage"),
+                           data.get("pathbuilder"), int(data.get("ironman")), data.get("home"), xp)
+    return redirect('/characters')
+
+
+@views.route('/adventures')
+def adventures():
+    adv = database.get_table("Games", "Date", 0, 15)
+    return render_template("/adventures.html", user=current_user, adventures=adv)
+
+
+@views.route('/add_adventure')
+@login_required
+def add_adventure():
+    pl = database.get_table("Players", "PlayerName")
+    return render_template("add_adventure.html", user=current_user, players=pl)

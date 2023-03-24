@@ -103,9 +103,9 @@ def init_db():
     sql_exec("CREATE TABLE IF NOT EXISTS characters(PlayerName, Name, Ancestry, Background, Class, Heritage, "
              "Unlocks, Rewards, Home, Pathbuilder, Comments, CommunityService, PDFs, FVTTs, XP, ExpectedGold, "
              "CurrentGold, Games, Items, Rares, Ironman, Enterer, PRIMARY KEY(PlayerName, Name))")
-    sql_exec("CREATE TABLE IF NOT EXISTS games(ID, Name, Date, Enterer, Time, GameLevel, Items, PRIMARY KEY(ID))")
+    sql_exec("CREATE TABLE IF NOT EXISTS games(ID, Name, Date, Enterer, Time, GameLevel, Items, GM, PRIMARY KEY(ID))")
     # Events holds all games, transactions, and adjustments that could happen to a player.
-    sql_exec("CREATE TABLE IF NOT EXISTS events(ID, TimeStamp, PlayerName, CharacterName, EventDate, "
+    sql_exec("CREATE TABLE IF NOT EXISTS events(ID, RelatedID, TimeStamp, PlayerName, CharacterName, EventDate, "
              "XPAdjust, KarmaAdjust, GoldAdjust, ItemsBought, ItemsLost, Unlocks, Rewards, CommunityService, "
              "Comment, PRIMARY KEY(ID))")
     sql_exec("CREATE TABLE IF NOT EXISTS historians(OathID, Email, Name, permissions, PRIMARY KEY(OathID))")
@@ -156,12 +156,14 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
         print("PC already exists with name " + name + " on player: " + player_name)
         return False
 
+    gold = 15.0 + ett.ett_gold_add_xp(0, starting_xp)
+
     print("Adding PC " + name)
     sql_exec("""
         INSERT INTO characters VALUES
-        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, 0, 0, '', '', '', ?, ?)""",
-             (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp, ironman,
-              enterer))
+        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, ?, ?, '', '', '', ?, ?)""",
+             (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp,
+              gold, gold, ironman, enterer))
 
 
 # Add item to the player's inventory, spending any money as appropriate. This ALSO
@@ -189,13 +191,15 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             rare_items.append(i)
     rare_text = ett.pf2e_element_list_to_string(rare_items)
     timestamp = time.time()
-    sql_exec("""
-            INSERT INTO games VALUES
-            (?, ?, ?, ?, ?, ?, ?)
-        """, (uuid.uuid4(), name, date, enterer, time, game_level, items_text))
+    game_id = uuid.uuid4()
     for pl in players:
+        # GM player
         if pl.player_level == 0:
             add_xp_to_player(pl.player_name, pl.time_played * 1.5)
+            sql_exec("""
+                        INSERT INTO games VALUES
+                        (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (game_id, name, date, enterer, time, game_level, items_text, pl.player_name))
         else:
             pl_stats = sql_exec("""
                 SELECT XP, ExpectedGold, CurrentGold, Unlocks, CommunityService, Ironman
@@ -254,8 +258,8 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             """, (total_karma, pl.player_name))
             sql_exec("""
                 INSERT INTO events VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?)
-            """, (uuid.uuid4(), timestamp, pl.player_name, pl.name, date, xp_added, net_karma, adventure_gold,
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?)
+            """, (uuid.uuid4(), game_id, timestamp, pl.player_name, pl.name, date, xp_added, net_karma, adventure_gold,
                   items_text, comments))
             print("Updated player with the following information: ")
             print("total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name")

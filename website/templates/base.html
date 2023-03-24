@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+    {% block head %}
+    {% endblock %}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link
@@ -32,6 +34,7 @@
           <a class="nav-item nav-link" id="home" href="/">Home</a>
           <a class="nav-item nav-link" id="players" href="/players">Players</a>
           <a class="nav-item nav-link" id="characters" href="/characters">Characters</a>
+          <a class="nav-item nav-link" id="adventures" href="/adventures">Adventures</a>
           {% if user.is_authenticated %}
           <a class="nav-item nav-link" id="logout" href="/logout">Logout</a>
           {% else %}
