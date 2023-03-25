@@ -56,6 +56,13 @@
     <input class="form-control column" step="1" type="number" id="playersNr" name="playersNr"
            min="1" max="8" placeholder="1" required>
       </div>
+    <div class="ettrow">
+    <div class="column"></div>
+    <a style="margin:10px 0px;" class="btn btn-primary column" href="#" id="generate-players"
+       onclick="addPlayers({{ characters }})">Generate Players</a>
+    </div>
+
+    <div id="player-container"></div>
 
 
   </div>

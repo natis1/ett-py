@@ -357,3 +357,8 @@ def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], 
     print("Updated player with the following information: ")
     print("final_gold, final_str, items sold, player_name, name")
     print(final_gold, final_str, ett.pf2e_element_list_to_string(items), player_name, name)
+
+# TODO: Generate all items, gold, unlocked items, xp, etc, on a character, from just their
+# audit history. By going through the audit history ordered by timestamp for a character
+# and applying it to that character.
+

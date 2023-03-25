@@ -91,4 +91,11 @@ def adventures():
 @login_required
 def add_adventure():
     pl = database.get_table("Players", "PlayerName")
-    return render_template("add_adventure.html", user=current_user, players=pl)
+    ch = database.get_table("Characters", ["PlayerName", "Name"])
+    formatted_ch = []
+    for i in ch:
+        tab = [i[0], i[1]]
+        formatted_ch.append(tab)
+    print(formatted_ch)
+
+    return render_template("add_adventure.html", user=current_user, players=pl, characters=formatted_ch)
