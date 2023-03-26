@@ -135,7 +135,7 @@ def add_adventure_post():
         pl_name = player_names[i]
         pl_name_split = pl_name.split("|", 1)
         pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], int(player_levels[i]),
-                               float(player_times[i]), int(player_karma[i]), player_died == 'X')
+                               float(player_times[i]), int(player_karma[i]), player_died[i] == 'X')
         player_list += [pl]
 
     print(items, player_list)
