@@ -140,6 +140,17 @@ def add_xp_to_player(name, xp: float):
     """, (new_xp, name))
 
 
+def add_karma_to_player(name, karma: int):
+    existing_karma = get_code("players", "Karma", "PlayerName", name)
+    if existing_karma is None:
+        print("Player does not exist " + name)
+        return False
+    new_karma = existing_karma + karma
+    sql_exec("""
+            UPDATE players SET Karma = ? where PlayerName = ?
+    """, (new_karma, name))
+
+
 def get_character(player_name, name):
     return sql_exec("""
         SELECT PlayerName FROM characters WHERE PlayerName = ? and Name = ?
@@ -200,6 +211,13 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
                         INSERT INTO games VALUES
                         (?, ?, ?, ?, ?, ?, ?, ?)
                     """, (game_id, name, date, enterer, time, game_level, items_text, pl.player_name))
+
+            sql_exec("""
+                            INSERT INTO events VALUES
+                            (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?)
+                        """, (
+            uuid.uuid4(), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5, net_karma, adventure_gold,
+            items_text, comments))
         else:
             pl_stats = sql_exec("""
                 SELECT XP, ExpectedGold, CurrentGold, Unlocks, CommunityService, Ironman
@@ -210,16 +228,9 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
                 print("ERROR: Character with player name: " + pl.player_name +
                       " and name: " + pl.name + " does not exist!")
                 continue
-            cur_karma = get_code("players", "Karma", "PlayerName", pl.player_name)
-            # This means the player is invalid
-            if cur_karma is None:
-                print("ERROR: Player with name: " + pl.player_name + " does not exist!")
-                continue
-            cur_karma = cur_karma[0]
             expected_level = (pl_stats[0] / 12) + 1
             tt_up = (expected_level < pl.player_level) and (not continuation)
             net_karma = pl.gained_karma - tt_up
-            total_karma = net_karma + cur_karma
             if not pl_stats[1]:
                 pl_stats[1] = 0
             if not pl_stats[2]:
@@ -253,9 +264,7 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
                 UPDATE characters SET XP = ?, ExpectedGold = ?, CurrentGold = ?, Unlocks = ?, CommunityService = ?
                 where PlayerName = ? and Name = ?
             """, (total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name))
-            sql_exec("""
-                UPDATE players SET Karma = ? where PlayerName = ?
-            """, (total_karma, pl.player_name))
+            add_karma_to_player(pl.name, net_karma)
             sql_exec("""
                 INSERT INTO events VALUES
                 (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?)

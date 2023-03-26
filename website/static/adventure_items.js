@@ -209,20 +209,23 @@ function addPlayers(characters) {
         var died_label = document.createElement("label")
         died_label.htmlFor = "players[][died]";
         died_label.innerHTML="Died";
-        var died_div = document.createElement("div");
-        var died = document.createElement("input");
-        died.type = "checkbox";
-        died.value = "X";
-        died.name = "players[][died]";
-        died.id = "players[][died]";
-        died_div.classList.add('column');
-        died.classList.add('checkbox');
-        died.style.cssText += 'width: 10%;height:30px;';
-        died.style.color = 'firebrick';
+        var did_die = document.createElement("select");
+        var alive = document.createElement("option");
+        alive.innerHTML = "Alive";
+        alive.value = "";
+        var dead = document.createElement("option");
+        dead.innerHTML = "Dead";
+        dead.value = "X";
+
+        did_die.appendChild(option);
+        did_die.name = "players[][died]";
+        did_die.id = "players[][died]";
+        did_die.classList.add('checkbox');
+        did_die.appendChild(alive);
+        did_die.appendChild(dead);
         died_label.classList.add('column');
-        died_div.appendChild(died);
         row5.appendChild(died_label);
-        row5.appendChild(died_div);
+        row5.appendChild(did_die);
         container.appendChild(row5);
 
 

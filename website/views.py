@@ -2,7 +2,7 @@ import math
 
 from flask import Blueprint, render_template, request, redirect
 from flask_login import current_user, login_required
-from src import database
+from src import database, ett
 views = Blueprint('views', __name__)
 
 
@@ -99,3 +99,43 @@ def add_adventure():
     print(formatted_ch)
 
     return render_template("add_adventure.html", user=current_user, players=pl, characters=formatted_ch)
+
+
+@views.route('/add_adventure', methods=['POST'])
+@login_required
+def add_adventure_post():
+    print(request.form)
+    data = request.form
+    items = []
+    items_name = request.form.getlist('items[][name]')
+    items_level = request.form.getlist('items[][level]')
+    items_cost = request.form.getlist('items[][cost]')
+    items_rarity = request.form.getlist('items[][rarity]')
+    items_num = int(request.form.get('itemsNr'))
+    players_num = int(request.form.get('playersNr'))
+    for i in range(0, items_num):
+        itm = ett.Pf2eElement(items_name[i], int(items_level[i]), float(items_cost[i]), int(items_rarity[i]))
+        items += [itm]
+
+    gm_player_name = request.form.get('gm')
+    gm_game_time = float(request.form.get('time'))
+    gm_karma_gain = request.form.get('gmKarma')
+    if gm_karma_gain is None:
+        gm_karma_gain = 0
+    else:
+        gm_karma_gain = int(gm_karma_gain)
+
+    player_list = [ett.EttGamePlayer(gm_player_name, '', 0, gm_game_time, 0, gm_karma_gain, True)]
+    player_names = request.form.getlist('players[][name]')
+    player_levels = request.form.getlist('players[][level]')
+    player_times = request.form.getlist('players[][time]')
+    player_karma = request.form.getlist('players[][karma]')
+    player_died = request.form.getlist('players[][died]')
+    for i in range(0, players_num):
+        pl_name = player_names[i]
+        pl_name_split = pl_name.split("|", 1)
+        pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], int(player_levels[i]),
+                               float(player_times[i]), int(player_karma[i]), player_died == 'X')
+        player_list += [pl]
+
+    print(items, player_list)
