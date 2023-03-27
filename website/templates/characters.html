@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Character List</h1>
 <br/>
-<table class="table table-sm">
+<table id="data" class="table table-sm">
     <thead>
     <tr>
         <th scope="col">Player</th>
@@ -12,34 +12,39 @@
         <th scope="col">Class</th>
         <th scope="col">XP</th>
         <th scope="col">Gold</th>
+        <th width="5%" scope="col"></th>
         {% if user.is_authenticated %}
-        <th scope="col">Edit</th>
+        <th width="5%" scope="col"></th>
         {% endif %}
     </tr>
     </thead>
-    <tbody>
-    {% for character in characters %}
-    <tr>
-        <td>{{ character[0] }} </td>
-        <td>{{ character[1] }} </td>
-        <td>{{ character[2] }} </td>
-        <td>{{ character[4] }} </td>
-        <td>{{ character[14] }} </td>
-        <td>{{ character[16] }} </td>
-        {% if user.is_authenticated %}
-        <form action='/edit_character' method="POST">
-            <td> <input type="hidden" id="playerName" name="playerName" value="{{ character[0] }}">
-                <button type="submit" class="btn btn-primary"
-                        id="name" name="name" value="{{ character[1] }}">Edit</button></td>
-        </form>
-        {% endif %}
-    </tr>
-    {% endfor %}
-    </tbody>
+    <tbody> </tbody>
 </table>
 {% if user.is_authenticated %}
 <form action="/add_character">
     <button type="submit" class="btn btn-primary">Add Character</button>
 </form>
 {% endif %}
+{% endblock %}
+{% block javascript %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({
+        ajax: '/api/characters',
+        serverSide: true,
+        columns: [
+          {data: 'PlayerName'},
+          {data: 'Name'},
+          {data: 'Ancestry'},
+          {data: 'Class'},
+          {data: 'XP'},
+          {data: 'CurrentGold'},
+          {defaultContent: '<button id="view" class="btn btn-primary">View</button>', orderable: false}
+          {% if user.is_authenticated %},
+          {defaultContent: '<button id="edit" type="submit" class="btn btn-danger">Edit</button>', orderable: false}
+          {% endif %}
+        ],
+      });
+    });
+  </script>
 {% endblock %}

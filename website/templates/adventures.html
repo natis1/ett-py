@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Adventure Sessions</h1>
 <br/>
-<table class="table table-sm">
+<table id="data" class="table table-sm">
     <thead>
     <tr>
         <th scope="col">Name</th>
@@ -11,28 +11,13 @@
         <th scope="col">Run By</th>
         <th scope="col">Length (H)</th>
         <th scope="col">Level</th>
+        <th width="5%" scope="col"></th>
         {% if user.is_authenticated %}
-        <th scope="col">Edit</th>
+        <th width="5%" scope="col"></th>
         {% endif %}
     </tr>
     </thead>
     <tbody>
-    {% for a in adventures %}
-    <tr>
-        <td>{{ a[1] }} </td>
-        <td>{{ a[2] }} </td>
-        <td>{{ a[7] }} </td>
-        <td>{{ a[4] }} </td>
-        <td>{{ a[5] }} </td>
-        {% if user.is_authenticated %}
-        <form action='/edit_adventure' method="POST">
-            <td>
-                <button type="submit" class="btn btn-primary"
-                        id="id" name="id" value="{{ a[0] }}">Edit</button></td>
-        </form>
-        {% endif %}
-    </tr>
-    {% endfor %}
     </tbody>
 </table>
 {% if user.is_authenticated %}
@@ -40,4 +25,25 @@
     <button type="submit" class="btn btn-primary">Add Adventure Session</button>
 </form>
 {% endif %}
+{% endblock %}
+{% block javascript %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({
+        ajax: '/api/adventures',
+        serverSide: true,
+        columns: [
+          {data: 'Name'},
+          {data: 'Date'},
+          {data: 'GM'},
+          {data: 'Time'},
+          {data: 'GameLevel'},
+          {defaultContent: '<button id="view" class="btn btn-primary">View</button>', orderable: false}
+          {% if user.is_authenticated %},
+          {defaultContent: '<button id="edit" type="submit" class="btn btn-danger">Edit</button>', orderable: false}
+          {% endif %}
+        ],
+      });
+    });
+  </script>
 {% endblock %}

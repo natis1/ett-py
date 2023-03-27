@@ -31,6 +31,7 @@ def ett_xp_rate(player_level, party_level):
     # Example 2: party level = 3, player level = 2. party - player = 1
     # 2 ** (1/2) ~= 1.4
     # All of the XP calculations follow this format
+    print("party level and player level are ", party_level, player_level)
     level_diff = party_level - player_level
     return 2 ** (level_diff / 2)
 
@@ -90,7 +91,7 @@ def ett_parse_unlocks(cur_unlocks: list[Pf2eElement], new: list[Pf2eElement], re
     for i in cur_unlocks:
         if i.rarity != 2 and i.level <= pl_level:
             continue
-        items += i
+        items += [i]
 
     for i in new:
         # Do not add redundant items that do not need unlocking
@@ -102,7 +103,7 @@ def ett_parse_unlocks(cur_unlocks: list[Pf2eElement], new: list[Pf2eElement], re
                 exists = True
                 break
         if not exists:
-            items += i
+            items += [i]
 
     # Remove any items to remove with this disgustingly inefficient loop.
     items2 = []
@@ -112,7 +113,7 @@ def ett_parse_unlocks(cur_unlocks: list[Pf2eElement], new: list[Pf2eElement], re
             if i.name == j.name:
                 keep_item = False
         if keep_item:
-            items2 += j
+            items2 += [j]
     return items2
 
 
@@ -142,7 +143,7 @@ def pf2e_element_list_to_string(elements: list[Pf2eElement]):
     output_str = ''
     for element_index in range(len(elements)):
         i = elements[element_index]
-        output_str += i.name + "|" + i.level + "|" + i.cost + "|" + i.rarity + "|" + i.quantity
+        output_str += i.name + "|" + str(i.level) + "|" + str(i.cost) + "|" + str(i.rarity) + "|" + str(i.quantity)
         if element_index < (len(elements) - 1):
             output_str += "\n"
     return output_str

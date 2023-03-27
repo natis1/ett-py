@@ -4,6 +4,7 @@ from flask_login import LoginManager
 from . import key
 from . import views
 from . import auth
+from . import api
 
 
 def create_app():
@@ -17,6 +18,7 @@ def create_app():
 
     app.register_blueprint(views.views, url_prefix='/')
     app.register_blueprint(auth.auth, url_prefix='/')
+    app.register_blueprint(api.api, url_prefix='/api/')
     lm = LoginManager()
     lm.login_view = 'auth.login'
     lm.init_app(app)

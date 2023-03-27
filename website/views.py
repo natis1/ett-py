@@ -111,7 +111,12 @@ def add_adventure_post():
     items_level = request.form.getlist('items[][level]')
     items_cost = request.form.getlist('items[][cost]')
     items_rarity = request.form.getlist('items[][rarity]')
-    items_num = int(request.form.get('itemsNr'))
+    items_num = request.form.get('itemsNr')
+    if not items_num:
+        items_num = 0
+    else:
+        items_num = int(items_num)
+
     players_num = int(request.form.get('playersNr'))
     for i in range(0, items_num):
         itm = ett.Pf2eElement(items_name[i], int(items_level[i]), float(items_cost[i]), int(items_rarity[i]))
@@ -120,12 +125,12 @@ def add_adventure_post():
     gm_player_name = request.form.get('gm')
     gm_game_time = float(request.form.get('time'))
     gm_karma_gain = request.form.get('gmKarma')
-    if gm_karma_gain is None:
+    if not gm_karma_gain:
         gm_karma_gain = 0
     else:
         gm_karma_gain = int(gm_karma_gain)
 
-    player_list = [ett.EttGamePlayer(gm_player_name, '', 0, gm_game_time, 0, gm_karma_gain, True)]
+    player_list = [ett.EttGamePlayer(gm_player_name, '', 0, gm_game_time, gm_karma_gain, True)]
     player_names = request.form.getlist('players[][name]')
     player_levels = request.form.getlist('players[][level]')
     player_times = request.form.getlist('players[][time]')
@@ -135,7 +140,16 @@ def add_adventure_post():
         pl_name = player_names[i]
         pl_name_split = pl_name.split("|", 1)
         pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], int(player_levels[i]),
-                               float(player_times[i]), int(player_karma[i]), player_died[i] == 'X')
+                               float(player_times[i]), int(player_karma[i]), player_died[i] != 'X')
         player_list += [pl]
 
-    print(items, player_list)
+    game_name = request.form.get('gameName')
+    game_length = float(request.form.get('time'))
+    game_date = request.form.get('date')
+    game_continuation = (request.form.get('continuation') is not None)
+    game_comments = request.form.get('comments')
+
+    database.add_game(game_name, game_date, game_length, items,
+                      player_list, game_continuation, game_comments, current_user.name)
+
+    return redirect('/adventures')

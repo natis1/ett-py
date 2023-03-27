@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block head %}
+{% block javascript %}
 <script type="text/javascript"
             src="{{ url_for('static', filename='adventure_items.js') }}"></script>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='split_half.css') }}">
+{% endblock %}
+{% block head %}
 {% endblock %}
 {% block title %}Add Adventure{% endblock %}
 {% block content %}
@@ -12,8 +12,8 @@
   <div class="form-group container" style="max-width:600px;">
     <h1>Add Adventure</h1>
 
-    <div class="ettrow">
-    <label for="gm" class="column">GM:</label>
+    <div class="ettrow required">
+    <label for="gm" class="column required">GM:</label>
     <select class="form-control column" id="gm" name="gm">
       {% for player in players %}
       <option>{{ player[0] }} </option>
@@ -27,37 +27,42 @@
            min="0" max="5" placeholder="0">
       </div>
 
-    <div class="ettrow">
+    <div class="ettrow required">
     <label for="gamename" class="column">Game Name:</label>
-    <input class="form-control column" name="gamename" id="gamename" maxlength="64"
+    <input class="form-control column" name="gameName" id="gameName" maxlength="64"
            minlength="2" placeholder="Troubles in La Mulana Part 1" required>
     </div>
-    <div class="ettrow">
+    <div class="ettrow required">
       <label for="date" class="column">Date:</label>
       <input class="form-control column" name="date" id="date" type="date" required>
     </div>
-    <div class="ettrow">
+    <div class="ettrow required">
     <label for="time" class="column">Length (Hours):</label>
       <input class="form-control column" step="0.01" type="number" id="time" name="time"
            min="0" max="100" placeholder="4" required>
       </div>
-    <div class="ettrow">
-    <label for="level" class="column">Game Level:</label>
+    <div class="ettrow required">
+    <label for="level" class="column required">Game Level:</label>
     <input class="form-control column" step="1" type="number" id="level" name="level"
            min="1" max="20" placeholder="1" required>
       </div>
 
     <div class="ettrow">
+    <label for="comments" class="column">Comments:</label>
+    <textarea class="form-control column" rows="3" id="comments" name="comments"></textarea>
+      </div>
+
+    <div class="ettrow">
     <label for="itemsNr" class="column">Number of Items:</label>
     <input class="form-control column" step="1" type="number" id="itemsNr" name="itemsNr"
-           min="0" max="20" placeholder="0" required>
+           min="0" max="20" placeholder="0">
     </div>
     <div class="ettrow">
     <div class="column"></div>
     <a style="margin:10px 0px;" class="btn btn-primary column" href="#" id="generate-items" onclick="addItems()">Generate Items</a>
     </div>
     <div id="item-container"></div>
-    <div class="ettrow">
+    <div class="ettrow required">
     <label for="playersNr" class="column">Number of Players:</label>
     <input class="form-control column" step="1" type="number" id="playersNr" name="playersNr"
            min="1" max="8" placeholder="1" required>
@@ -73,7 +78,7 @@
 
   </div>
   <div align="center">
-    <button type="submit" class="btn btn-primary">Add Player</button>
+    <button type="submit" class="btn btn-primary">Submit Adventure</button>
   </div>
 </form>
 

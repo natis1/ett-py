@@ -3,15 +3,43 @@
 {% block content %}
 <h1>Players</h1>
 <br/>
-<ul class="list-group list-group-flush" id="players">
-    {% for player in players %}
-        <li class="list-group-item">{{ player[0] }} </li>
-    {% endfor %}
-</ul>
+<table id="data" class="table table-sm">
+    <thead>
+    <tr>
+        <th scope="col">Player</th>
+        <th scope="col">Karma</th>
+        <th width="5%" scope="col"></th>
+        {% if user.is_authenticated %}
+        <th width="5%" scope="col"></th>
+        {% endif %}
+    </tr>
+    </thead>
+    <tbody> </tbody>
+</table>
+
 <br/>
 {% if user.is_authenticated %}
 <form action="/add_player">
     <button type="submit" class="btn btn-primary">Add Player</button>
 </form>
 {% endif %}
+{% endblock %}
+
+{% block javascript %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({
+        ajax: '/api/players',
+        serverSide: true,
+        columns: [
+          {data: 'PlayerName'},
+          {data: 'Karma'},
+          {defaultContent: '<button id="view" class="btn btn-primary">View</button>', orderable: false}
+          {% if user.is_authenticated %},
+          {defaultContent: '<button id="edit" type="submit" class="btn btn-danger">Edit</button>', orderable: false}
+          {% endif %}
+        ],
+      });
+    });
+  </script>
 {% endblock %}

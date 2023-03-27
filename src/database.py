@@ -45,12 +45,26 @@ def sqlite_worker():
 threading.Thread(target=sqlite_worker, daemon=True).start()
 
 
-def sql_exec(sql, params=None, fetch: Fetch = Fetch.NONE) -> sqlite3.Cursor:
+def sql_exec(sql, params=None, fetch: Fetch = Fetch.NONE):
     # you might not really need the results if you only use this
     # for writing unless you use something like https://www.sqlite.org/lang_returning.html
     result_queue = queue.Queue()
     work_queue.put(((sql, params, fetch), result_queue))
     return result_queue.get()
+
+
+SAFE_PLAYER_COLUMNS = ['PlayerName', 'Karma', 'Characters', 'BonusXP', 'Upgrades', 'Enterer',
+                       'PlayerName desc', 'Karma desc', 'Characters desc', 'BonusXP desc',
+                       'Upgrades desc', 'Enterer desc']
+SAFE_CHARACTER_COLUMNS = ['PlayerName', 'Name', 'Ancestry', 'Background', 'Class', 'Heritage',
+                          'Unlocks', 'Rewards', 'Home', 'CommunityService', 'XP', 'ExpectedGold',
+                          'CurrentGold', 'Ironman', 'Enterer',
+                          'PlayerName desc', 'Name desc', 'Ancestry desc', 'Background desc', 'Class desc',
+                          'Heritage desc', 'Unlocks desc', 'Rewards desc', 'Home desc', 'CommunityService desc',
+                          'XP desc', 'ExpectedGold desc', 'CurrentGold desc', 'Ironman desc', 'Enterer desc'
+                          ]
+SAFE_GAME_COLUMNS = ['ID', 'Name', 'Date', 'Enterer', 'Time', 'GameLevel', 'GM',
+                     'ID desc', 'Name desc', 'Date desc', 'Enterer desc', 'Time desc', 'GameLevel desc', 'GM desc']
 
 
 # WARNING: ONLY search_for can be untrusted. ALL OTHERS MUST BE HARDCODED.
@@ -70,14 +84,13 @@ def get_row(table: str, search: str, search_for: str):
     """, (search_for,), Fetch.ONE)
 
 
-# ONLY OFFSET AND LIMIT ARE ALLOWED TO BE UNSAFE HERE
-def get_table(table: str, order_by, offset: int = 0, limit: int = 0):
-    # Is this even needed? I have no idea.
+# NOTE: order_by MUST be made SAFE before running this to avoid SQL injection.
+def get_offset_limit_query(order_by, offset: int = 0, limit: int = 0):
     if (not isinstance(offset, int)) or (not isinstance(limit, int)):
         print("ERROR: ATTEMPTED POSSIBLE SQL INJECTION FROM ", offset, limit)
         return []
+    qry = ''
 
-    qry = f'SELECT * FROM {table}'
     if isinstance(order_by, str):
         qry += f' ORDER BY {order_by}'
     elif isinstance(order_by, list) and len(order_by) > 0:
@@ -92,7 +105,87 @@ def get_table(table: str, order_by, offset: int = 0, limit: int = 0):
     if limit != 0:
         qry += f' LIMIT {limit}'
 
-    return sql_exec(qry, None, Fetch.ALL)
+    return qry
+
+
+# ONLY OFFSET AND LIMIT ARE ALLOWED TO BE UNSAFE HERE
+def get_table(table: str, order_by, offset: int = 0, limit: int = 0):
+    qry = get_offset_limit_query(order_by, offset, limit)
+    return sql_exec(f"SELECT * FROM {table} " + qry, None, Fetch.ALL)
+
+
+def get_players_table(order_by, offset: int = 0, limit: int = 0, search: str = ""):
+    true_order = []
+    if isinstance(order_by, str):
+        order_by = [order_by]
+
+    if isinstance(order_by, list):
+        for i in order_by:
+            if i in SAFE_PLAYER_COLUMNS:
+                true_order += [i]
+
+    qry = get_offset_limit_query(true_order, offset, limit)
+    if search:
+        total = sql_exec("SELECT COUNT(*) FROM players WHERE PlayerName LIKE ?", ('%'+search+'%'), Fetch.ONE)
+        page = sql_exec("SELECT * FROM players WHERE PlayerName LIKE ? " + qry, ('%' + search + '%',), Fetch.ALL)
+        return total, page
+    else:
+        total = sql_exec("SELECT COUNT(*) FROM players", None, Fetch.ONE)
+        page = sql_exec("SELECT * FROM players " + qry, None, Fetch.ALL)
+        return total, page
+
+
+def get_characters_table(order_by, offset: int = 0, limit: int = 0, search: str = ""):
+    true_order = []
+    if isinstance(order_by, str):
+        order_by = [order_by]
+
+    if isinstance(order_by, list):
+        for i in order_by:
+            if i in SAFE_CHARACTER_COLUMNS:
+                true_order += [i]
+
+    qry = get_offset_limit_query(true_order, offset, limit)
+    if search:
+        s = '%' + search + '%'
+        total = sql_exec("SELECT COUNT(*) FROM characters WHERE "
+                         "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? ",
+                         (s, s, s, s), Fetch.ONE)
+        page = sql_exec("SELECT * FROM characters WHERE "
+                        "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? " + qry,
+                        (s, s, s, s), Fetch.ALL)
+        return total, page
+    else:
+        total = sql_exec("SELECT COUNT(*) FROM characters ", None, Fetch.ONE)
+        page = sql_exec("SELECT * FROM characters " + qry, None, Fetch.ALL)
+        return total, page
+
+
+def get_games_table(order_by, offset: int = 0, limit: int = 0, search: str = ""):
+    true_order = []
+    if isinstance(order_by, str):
+        order_by = [order_by]
+
+    if isinstance(order_by, list):
+        for i in order_by:
+            if i in SAFE_GAME_COLUMNS:
+                true_order += [i]
+
+    qry = get_offset_limit_query(true_order, offset, limit)
+    if search:
+        s = '%' + search + '%'
+        total = sql_exec("SELECT COUNT(*) FROM games WHERE "
+                         "Name LIKE ? or Date LIKE ? or GameLevel LIKE ? or GM LIKE ? ",
+                         (s, s, s, s), Fetch.ONE)
+        page = sql_exec("SELECT * FROM games WHERE "
+                        "Name LIKE ? or Date LIKE ? or GameLevel LIKE ? or GM LIKE ? " + qry,
+                        (s, s, s, s), Fetch.ALL)
+        return total, page
+    else:
+        total = sql_exec("SELECT COUNT(*) FROM games ", None, Fetch.ONE)
+        page = sql_exec("SELECT * FROM games " + qry, None, Fetch.ALL)
+        return total, page
+
 
 
 def init_db():
@@ -191,8 +284,13 @@ def remove_items(items: list[ett.Pf2eElement], gold_multiplier):
     pass
 
 
-def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.EttGamePlayer],
+def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[ett.EttGamePlayer],
              continuation, comments, enterer):
+    existing_games = sql_exec("""
+        SELECT * FROM Games WHERE Name = ? and Date = ?
+    """, (name, date), Fetch.ONE)
+    if existing_games:
+        print("This game is already logged in our DB. Exiting. ")
     comments = "GAME PLAYED: " + comments
     game_level = ett.ett_party_level(players)
     items_text = ett.pf2e_element_list_to_string(items)
@@ -202,7 +300,7 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             rare_items.append(i)
     rare_text = ett.pf2e_element_list_to_string(rare_items)
     timestamp = time.time()
-    game_id = uuid.uuid4()
+    game_id = str(uuid.uuid4())
     for pl in players:
         # GM player
         if pl.player_level == 0:
@@ -210,14 +308,14 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             sql_exec("""
                         INSERT INTO games VALUES
                         (?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (game_id, name, date, enterer, time, game_level, items_text, pl.player_name))
+                    """, (game_id, name, date, enterer, game_time, game_level, items_text, pl.player_name))
 
             sql_exec("""
                             INSERT INTO events VALUES
-                            (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?)
+                            (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', 0, ?)
                         """, (
-            uuid.uuid4(), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5, net_karma, adventure_gold,
-            items_text, comments))
+                str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5,
+                pl.gained_karma, 0, items_text, comments))
         else:
             pl_stats = sql_exec("""
                 SELECT XP, ExpectedGold, CurrentGold, Unlocks, CommunityService, Ironman
@@ -237,6 +335,7 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
                 pl_stats[2] = 0
             # subtract any community service you need to do
             cs_remaining = pl_stats[4]
+            cs_change = -cs_remaining
             if not (pl_stats[4] == '' or pl_stats[4] == 0):
                 if (pl_stats[4] - pl.time_played) <= 0:
                     cs_remaining = 0
@@ -259,7 +358,9 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             # But you at least gain the xp from playing.
             if not pl.alive:
                 cs_remaining = ett.ett_died_cs(pl, (1 + math.floor(total_xp / 12)), pl_stats[5])
+                cs_change += cs_remaining
             # Update the player with the new game information
+
             sql_exec("""
                 UPDATE characters SET XP = ?, ExpectedGold = ?, CurrentGold = ?, Unlocks = ?, CommunityService = ?
                 where PlayerName = ? and Name = ?
@@ -267,13 +368,13 @@ def add_game(name, date, time, items: list[ett.Pf2eElement], players: list[ett.E
             add_karma_to_player(pl.name, net_karma)
             sql_exec("""
                 INSERT INTO events VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?)
-            """, (uuid.uuid4(), game_id, timestamp, pl.player_name, pl.name, date, xp_added, net_karma, adventure_gold,
-                  items_text, comments))
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?, ?)
+            """, (str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, xp_added, net_karma,
+                  adventure_gold, items_text, cs_change, comments))
             print("Updated player with the following information: ")
             print("total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name")
             print(total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name)
-            print("Karma: " + str(total_karma))
+            print("Karma added: " + str(net_karma))
 
 
 def buy_items(player_name, name, date, comments, items: list[ett.Pf2eElement], price_factor: float = 1.0):
@@ -370,4 +471,3 @@ def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], 
 # TODO: Generate all items, gold, unlocked items, xp, etc, on a character, from just their
 # audit history. By going through the audit history ordered by timestamp for a character
 # and applying it to that character.
-

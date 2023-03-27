@@ -16,6 +16,7 @@ function addItems(){
     for (i=0; i<number; i++){
         var row1 = document.createElement("div");
         row1.classList.add("ettrow");
+        row1.classList.add("required");
         var name_label = document.createElement("label");
         name_label.htmlFor = "items[][name]";
         name_label.innerHTML = "Item " + (i+1) + " Name";
@@ -35,9 +36,10 @@ function addItems(){
 
         var row2 = document.createElement("div");
         row2.classList.add("ettrow");
+        row2.classList.add("required");
         var level_label = document.createElement("label");
         level_label.htmlFor = "items[][level]";
-        level_label.innerHTML = "Level";
+        level_label.innerHTML = "Level:";
         level_label.classList.add('column');
         var level = document.createElement("input");
         level.required = true;
@@ -56,9 +58,10 @@ function addItems(){
 
         var row3 = document.createElement("div");
         row3.classList.add("ettrow");
+        row3.classList.add("required");
         var cost_label = document.createElement("label");
         cost_label.htmlFor = "items[][cost]";
-        cost_label.innerHTML = "Cost";
+        cost_label.innerHTML = "Cost:";
         cost_label.classList.add('column');
         var cost = document.createElement("input");
         cost.required = true;
@@ -77,6 +80,7 @@ function addItems(){
 
         var row4 = document.createElement("div");
         row4.classList.add("ettrow");
+        row4.classList.add("required");
         var rarity_label = document.createElement("label");
         rarity_label.htmlFor = "items[][rarity]";
         rarity_label.innerHTML = "Rarity:";
@@ -121,6 +125,7 @@ function addPlayers(characters) {
     for (i=0; i<number; i++){
         var row1 = document.createElement("div");
         row1.classList.add("ettrow");
+        row1.classList.add("required");
         var name_label = document.createElement("label");
         name_label.htmlFor = "players[][name]";
         name_label.innerHTML = "Player " + (i+1) + ":";
@@ -216,8 +221,6 @@ function addPlayers(characters) {
         var dead = document.createElement("option");
         dead.innerHTML = "Dead";
         dead.value = "X";
-
-        did_die.appendChild(option);
         did_die.name = "players[][died]";
         did_die.id = "players[][died]";
         did_die.classList.add('checkbox');
