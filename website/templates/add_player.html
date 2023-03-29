@@ -6,12 +6,18 @@
 <form method="POST">
   <div class="form-group container" style="max-width:600px;">
     <h1>Add Player</h1>
-    <label for="playerName">Player Name</label>
-    <input class="form-control" name="playerName" id="playerName" maxlength="32" minlength="2">
-    <label for="karma">Starting Karma</label>
-    <input class="form-control" type="number" id="karma" name="karma" min="0" max="1000" placeholder="0">
-    <label for="xp">Starting XP</label>
-    <input class="form-control" step="0.01" type="number" id="xp" name="xp" min="0" max="8000" placeholder="0">
+    <div class="ettrow required">
+    <label for="playerName" class="column">Player Name:</label>
+    <input class="form-control column" name="playerName" id="playerName" maxlength="32" minlength="2">
+    </div>
+    <div class="ettrow">
+    <label for="karma" class="column">Starting Karma:</label>
+    <input class="form-control column" type="number" id="karma" name="karma" min="0" max="1000" placeholder="0">
+    </div>
+    <div class="ettrow">
+    <label for="xp" class="column">Starting XP:</label>
+    <input class="form-control column" step="0.01" type="number" id="xp" name="xp" min="0" max="8000" placeholder="0">
+    </div>
   </div>
   <div align="center">
     <button type="submit" class="btn btn-primary">Add Player</button>

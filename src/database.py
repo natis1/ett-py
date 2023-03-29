@@ -126,7 +126,7 @@ def get_players_table(order_by, offset: int = 0, limit: int = 0, search: str = "
 
     qry = get_offset_limit_query(true_order, offset, limit)
     if search:
-        total = sql_exec("SELECT COUNT(*) FROM players WHERE PlayerName LIKE ?", ('%'+search+'%'), Fetch.ONE)
+        total = sql_exec("SELECT COUNT(*) FROM players WHERE PlayerName LIKE ?", ('%'+search+'%',), Fetch.ONE)
         page = sql_exec("SELECT * FROM players WHERE PlayerName LIKE ? " + qry, ('%' + search + '%',), Fetch.ALL)
         return total, page
     else:
@@ -206,7 +206,7 @@ def init_db():
 
 def get_player(name):
     return sql_exec("""
-        SELECT PlayerName FROM players WHERE PlayerName = ?
+        SELECT * FROM players WHERE PlayerName = ?
     """, (name,), Fetch.ONE)
 
 
@@ -246,7 +246,7 @@ def add_karma_to_player(name, karma: int):
 
 def get_character(player_name, name):
     return sql_exec("""
-        SELECT PlayerName FROM characters WHERE PlayerName = ? and Name = ?
+        SELECT * FROM characters WHERE PlayerName = ? and Name = ?
     """, (player_name, name), Fetch.ONE)
 
 

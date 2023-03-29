@@ -29,7 +29,7 @@
 {% block javascript %}
   <script>
     $(document).ready(function () {
-      $('#data').DataTable({
+      var table = $('#data').DataTable({
         ajax: '/api/adventures',
         serverSide: true,
         columns: [
@@ -44,6 +44,35 @@
           {% endif %}
         ],
       });
+
+      $('#data tbody').on('click', 'button', function () {
+        var data = table.row($(this).parents('tr')).data();
+        var f = document.createElement('form');
+        if (this.id == "view") {
+          f.action='/view_adventure';
+        } else {
+          f.action='/edit_adventure';
+        }
+        f.method='POST';
+        f.target='_blank';
+        var i=document.createElement('input');
+        i.type='hidden';
+        i.name='date';
+        i.id='date';
+        i.value=data.Date;
+        var j=document.createElement('input');
+        j.type='hidden';
+        j.name='Name';
+        j.id='Name';
+        j.value=data.Name;
+        f.appendChild(i);
+        f.appendChild(j);
+
+        document.body.appendChild(f);
+        f.submit();
+      });
     });
+
+
   </script>
 {% endblock %}

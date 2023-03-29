@@ -29,7 +29,7 @@
 {% block javascript %}
   <script>
     $(document).ready(function () {
-      $('#data').DataTable({
+      var table = $('#data').DataTable({
         ajax: '/api/characters',
         serverSide: true,
         columns: [
@@ -45,6 +45,34 @@
           {% endif %}
         ],
       });
+
+      $('#data tbody').on('click', 'button', function () {
+        var data = table.row($(this).parents('tr')).data();
+        var f = document.createElement('form');
+        if (this.id == "view") {
+          f.action='/view_character';
+        } else {
+          f.action='/edit_character';
+        }
+        f.method='POST';
+        f.target='_blank';
+        var i=document.createElement('input');
+        i.type='hidden';
+        i.name='Name';
+        i.id='Name';
+        i.value=data.Name;
+        var j=document.createElement('input');
+        j.type='hidden';
+        j.name='PlayerName';
+        j.id='PlayerName';
+        j.value=data.PlayerName;
+        f.appendChild(i);
+        f.appendChild(j);
+
+        document.body.appendChild(f);
+        f.submit();
+      });
+
     });
   </script>
 {% endblock %}

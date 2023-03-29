@@ -1,6 +1,390 @@
 {% extends "base.html" %}
 {% block title %}Edit Character{% endblock %}
+{% block javascript %}
+<script type="text/javascript"
+            src="{{ url_for('static', filename='edit.js') }}"></script>
+{% endblock %}
 {% block content %}
-<h1>Edit Character</h1>
+<div class="ettrow">
+<h3 class="column">{{ c[0] }} - {{ c[1] }}</h3>
+    <div class="column ettrow">
+        <div class="column">
+            <label for="show_danger">Show Adjustments: </label>
+        </div>
+        <div class="column">
+            <input id="show_danger" name="show_danger" type="checkbox" onclick="showDanger();">
+        </div>
+    </div>
+</div>
 <br/>
+<!-- left side -->
+<div class="ettrow">
+    <div class="form-group container" style="max-width:800px;flex:47.5%;">
+        <form class="danger" action="/edit_character_names" method="POST"
+              onsubmit="return confirm('Are you sure you want to update character name/ownership?');">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="PlayerName2" class="column">Player:</label>
+                <select class="form-control column" id="PlayerName2" name="PlayerName2">
+                    <option selected>{{ c[0] }}</option>
+                    {% for player in players %}
+                    <option>{{ player[0] }} </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ettrow">
+                <label for="Name2" class="column">Name:</label>
+                <input class="form-control column" name="Name2" id="Name2" maxlength="32"
+                       minlength="2" value="{{ c[1] }}" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-danger column">Update Player Information</button>
+                </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_core" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="ancestry" class="column">Ancestry:</label>
+                <input class="form-control column" name="ancestry" id="ancestry" maxlength="32"
+                       minlength="2" value="{{ c[2] }}" required>
+            </div>
+            <div class="ettrow">
+                <label for="heritage" class="column">Heritage:</label>
+                <input class="form-control column" name="heritage" id="heritage" maxlength="32"
+                       minlength="2" value="{{ c[5] }}" required>
+            </div>
+            <div class="ettrow">
+                <label for="background" class="column">Background:</label>
+                <input class="form-control column" name="background" id="background" maxlength="32"
+                       minlength="2" value="{{ c[3] }}" required>
+            </div>
+            <div class="ettrow">
+                <label for="class" class="column">Class:</label>
+                <input class="form-control column" name="class" id="class" maxlength="32"
+                       minlength="2" value="{{ c[4] }}" required>
+            </div>
+            <div class="ettrow">
+                <label for="home" class="column">Home:</label>
+                <input class="form-control column" name="home" id="home" maxlength="32"
+                       minlength="2" value="{{ c[8] }}" required>
+            </div>
+            <div class="ettrow">
+                <label for="ironman" class="column">Ironman Mode:</label>
+                <select class="form-control column" id="ironman" name="ironman" required>
+                    <option {% if c[20] == 0 %}selected{% endif %} value="0">None</option>
+                    <option {% if c[20] == 1 %}selected{% endif %} value="1">Permadeath (A)</option>
+                    <option {% if c[20] == 2 %}selected{% endif %} value="2">No Community Service (B)</option>
+                    <option {% if c[20] == 3 %}selected{% endif %} value="3">Longer Community Service (C)</option>
+                </select>
+            </div>
+            <div class="ettrow">
+            <label for="comments" class="small_column">Comments:</label>
+            <textarea class="form-control big_column" rows="3" id="comments" name="comments"></textarea>
+            </div>
+
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Update Core information</button>
+            </div>
+            <br>
+        </form>
+        <form action="/edit_character_pdfurl" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="pdfurl" class="small_column">PDF URL:</label>
+                <input class="form-control big_column" name="url" id="pdfurl"
+                    type="url" placeholder="https://example.com">
+            </div>
+            <div class="ettrow">
+                <label for="pdflevel" class="small_column">PDF Level:</label>
+                <input class="form-control big_column" step="1" type="number" id="pdflevel" name="level"
+                min="1" max="20" required>
+            </div>
+            <div class="ettrow">
+                <div class="small_column"></div>
+                <button type="submit" class="btn btn-success big_column">Update/Add PDF URL</button>
+                </div>
+            <br>
+        </form>
+        <form action="/edit_character_fvtturl" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="fvtturl" class="small_column">FVTT json URL:</label>
+                <input class="form-control big_column" name="url" id="fvtturl"
+                    type="url" placeholder="https://example.com">
+            </div>
+            <div class="ettrow">
+                <label for="fvttlevel" class="small_column">FVTT Level:</label>
+                <input class="form-control big_column" step="1" type="number" id="fvttlevel" name="level"
+                min="1" max="20" required>
+            </div>
+            <div class="ettrow">
+                <div class="small_column"></div>
+                <button type="submit" class="btn btn-success big_column">Update/Add FVTT URL</button>
+                </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_pburl" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="url" class="small_column">Pathbuilder URL:</label>
+                <input class="form-control big_column" name="url" id="url"
+                    type="url" value="{{ c[9] }}">
+            </div>
+            <div class="ettrow">
+                <div class="small_column"></div>
+                <button type="submit" class="btn btn-warning big_column">Update Pathbuilder URL</button>
+                </div>
+            <br>
+        </form>
+        <form action="/edit_character_karmabuy" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="karma" class="column">Current Karma:</label>
+                <input class="form-control column" name="karma" id="karma" step="1"
+                    type="number" value="{{ e[5] }}" readonly>
+            </div>
+            <div class="ettrow">
+                <label for="k_buy" class="column">Reward to Buy:</label>
+                <select class="form-control column" name="k_buy" id="k_buy" step="1">
+                    {% for i in e[6] %}
+                        <option value="{{ i.name }}">{{ i.name }} - {{ i.level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ettrow">
+                <label for="k_qty" class="column">Quantity/Level to buy:</label>
+                <input class="form-control column" step="1" type="number" id="k_qty" name="k_qty"
+                min="1" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-success column">Buy Karma Reward</button>
+            </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_karmaadd" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="karma" class="column">Current Karma:</label>
+                <input class="form-control column" name="karma" id="karma" step="1"
+                    type="number" value="{{ e[5] }}">
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Modify Karma</button>
+            </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_karmaloss" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="k_unlocks" class="column">Karma Unlocks:</label>
+                <select class="form-control column" name="k_unlocks" id="k_unlocks">
+                    {% for i in e[4] %}
+                        <option value="{{ i.name }}">{{ i.name }} - {{ i.quantity }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ettrow">
+                <label for="remove_num" class="column">Number to remove:</label>
+                <input class="form-control column" step="1" type="number" id="remove_num" name="remove_num"
+                min="1" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Remove Karma Reward</button>
+            </div>
+            <br>
+        </form>
+    </div>
+    <!-- Padding -->
+    <div style="flex:5%;"></div>
+    <!-- right side -->
+    <div class="form-group container" style="max-width:800px;flex:47.5%;">
+        <form action="/edit_character_buy_item" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="buy_name" class="column">Item to Buy:</label>
+                <input class="form-control column" id="buy_name" name="buy_name" maxlength="32"
+                       minlength="2" required>
+            </div>
+            <div class="ettrow">
+                <label for="buy_level" class="column">Item Level:</label>
+                <input class="form-control column" step="1" type="number" id="buy_level" name="buy_level"
+                min="0" max="30" required>
+            </div>
+            <div class="ettrow">
+                <label for="buy_cost" class="column">Item Cost:</label>
+                <input class="form-control column" step="0.01" type="number" id="buy_cost" name="buy_cost"
+                min="0" required>
+            </div>
+            <div class="ettrow">
+                <label for="buy_qty" class="column">Quantity:</label>
+                <input class="form-control column" step="1" type="number" id="buy_qty" name="buy_qty"
+                min="1" required>
+            </div>
+            <div class="ettrow">
+                <label for="cost_factor" class="column">Cost Factor:</label>
+                <input class="form-control column" step="0.01" type="number" id="cost_factor" name="cost_factor"
+                min="0" max="1" value="1" required>
+            </div>
+            <div class="ettrow">
+                <label for="buy_rarity" class="column">Rarity:</label>
+                <select class="form-control column" id="buy_rarity" name="buy_rarity" required>
+                    <option value="0">Common</option>
+                    <option value="1">Uncommon</option>
+                    <option value="2">Rare</option>
+                </select>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-success column">Buy Item</button>
+            </div>
+            <br>
+        </form>
+        <form action="/edit_character_sell_item" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="inventory" class="column">Current Inventory:</label>
+                <select class="form-control column" name="inventory" id="inventory">
+                    {% for i in e[8] %}
+                        <option value="{{ i.name }}">{{ i.name }} - {{ i.quantity }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ettrow">
+                <label for="sell_qty" class="column">Sell Quantity:</label>
+                <input class="form-control column" step="1" type="number" id="sell_qty" name="sell_qty"
+                min="1" required>
+            </div>
+            <div class="ettrow">
+                <label for="sell_value" class="column">Sell Value (0 if used):</label>
+                <input class="form-control column" step="0.01" type="number" id="sell_value" name="sell_value"
+                min="0" max="1" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-success column">Sell/Use Items</button>
+            </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_remove_unlock" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="i_unlocks" class="column">Item Unlocks:</label>
+                <select class="form-control column" name="i_unlocks" id="i_unlocks" step="1">
+                    {% for i in e[7] %}
+                        <option value="{{ i.name }}">{{ i.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Remove Unlocked Item</button>
+            </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_add_unlock" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="unlock_name" class="column">Item to Unlock:</label>
+                <input class="form-control column" id="unlock_name" name="unlock_name" maxlength="32"
+                       minlength="2" required>
+            </div>
+            <div class="ettrow">
+                <label for="unlock_level" class="column">Item Level:</label>
+                <input class="form-control column" step="1" type="number" id="unlock_level" name="unlock_level"
+                min="0" max="30" required>
+            </div>
+            <div class="ettrow">
+                <label for="unlock_cost" class="column">Item Cost:</label>
+                <input class="form-control column" step="0.01" type="number" id="unlock_cost" name="unlock_cost"
+                min="0" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Add Unlocked Item</button>
+            </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_rares" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="t_rares" class="column">Total Rare Unlocks:</label>
+                <input class="form-control column" name="t_rares" id="t_rares" step="1"
+                    type="number" value="{{ e[3] }}" readonly>
+            </div>
+            <div class="ettrow">
+                <label for="rares_used" class="column">Rare Unlocks Used:</label>
+                <input class="form-control column" step="1" type="number" id="rares_used" name="rares_used"
+                min="0" value="{{ e[2] }}" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Update Rare Unlocks</button>
+                </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_xpcs" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="e_gold" class="column">Expected Gold:</label>
+                <input class="form-control column" name="e_gold" id="e_gold" step="0.01"
+                    type="number" value="{{ c[15] }}" readonly>
+            </div>
+            <div class="ettrow">
+                <label for="level_2" class="column">Current Level:</label>
+                <input class="form-control column" step="1" type="number" id="level_2" name="level"
+                min="1" max="20" value="{{ e[0] }}" readonly>
+            </div>
+            <div class="ettrow">
+                <label for="XP" class="column">XP:</label>
+                <input class="form-control column" step="0.01" type="number" id="XP" name="XP"
+                min="0" value="{{ c[14] }}" required>
+            </div>
+            <div class="ettrow">
+                <label for="CS" class="column">Community Service:</label>
+                <input class="form-control column" step="0.01" type="number" id="CS" name="CS"
+                min="0" value="{{ c[11] }}" required>
+            </div>
+
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Update XP & CS</button>
+                </div>
+            <br>
+        </form>
+        <form class="danger" action="/edit_character_modify_gold" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="gold" class="column">Current Gold:</label>
+                <input class="form-control column" id="gold" name="gold" step="0.01" value="{{ c[16] }}" type="number" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Update Gold</button>
+            </div>
+            <br>
+        </form>
+
+    </div>
+</div>
 {% endblock %}

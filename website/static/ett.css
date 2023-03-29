@@ -11,6 +11,16 @@
   line-height: 30px;
 }
 
+.big_column {
+  flex: 75%;
+  line-height: 30px;
+}
+
+.small_column {
+  flex: 25%;
+  line-height: 30px;
+}
+
 .required label {
     font-weight: bold;
 }

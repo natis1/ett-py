@@ -53,9 +53,23 @@ def characters():
 @views.route('/edit_character', methods=['POST'])
 @login_required
 def edit_character():
-    print(request.form)
-    print("Hello Editing Character")
-    return render_template("edit_character.html", user=current_user)
+    pl = database.get_table("Players", "PlayerName")
+    character = database.get_character(request.form.get("PlayerName"), request.form.get("Name"))
+    player = database.get_player(request.form.get("PlayerName"))
+    karma = player[1]
+
+    print(character)
+    total_rares = 1
+    rewards = ett.string_to_pf2e_element_list(character[7])
+    unlocks = ett.string_to_pf2e_element_list(character[6])
+    inventory = ett.string_to_pf2e_element_list(character[18])
+    for i in rewards:
+        if i.name == "Skeleton Key":
+            total_rares += i.quantity
+    rare_unlocks = ett.string_to_pf2e_element_list(character[19])
+    extra = (1 + math.floor(character[14] / ett.XP_PER_LEVEL), rare_unlocks, len(rare_unlocks),
+             total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory)
+    return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra)
 
 
 @views.route('/add_character')
