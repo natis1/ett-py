@@ -332,7 +332,7 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
         print("PC already exists with name " + name + " on player: " + player_name)
         return "PC already exists with name " + name + " on player: " + player_name
 
-    if ett.get_available_slots(p[PLAYERS.Upgrades], p[PLAYERS[CHARACTERS]]) <= 0:
+    if ett.get_available_slots(p[PLAYERS.Upgrades], p[PLAYERS.Characters]) <= 0:
         print("Not enough character slots for PC " + name + " on player: " + player_name)
         return "Not enough character slots for PC " + name + " on player: " + player_name
 
@@ -659,7 +659,7 @@ def move_character(cur_character: list, new_player_name: str):
     cur_player[PLAYERS.Characters] = list_to_string(new_pc_list)
 
     new_player_pc_list = string_list_to_list(new_player[PLAYERS.Characters])
-    new_player_pc_list += cur_character[CHARACTERS.Name]
+    new_player_pc_list += [cur_character[CHARACTERS.Name]]
     new_player[PLAYERS.Characters] = list_to_string(new_player_pc_list)
     # commit all the changes to DB
     edit_player(cur_player)

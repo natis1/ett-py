@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Edit Character{% endblock %}
+{% block javascript %}
+{% endblock %}
+{% block content %}
+<h3 class="column">{{ p[0] }}</h3>
+<br>
+<div class="ettrow">
+    <div class="column">Karma: </div>
+    <div class="column">{{ p[1] }}</div>
+</div>
+
+<div class="ettrow">
+    <div class="column">Characters Used: </div>
+    <div class="column">{{ e[2] }} / {{ e[3] }}</div>
+</div>
+
+<h5>Characters: </h5>
+<ul class="list-group">
+    {% for i in e[1] %}
+        <li class="list-group-item">{{ i }}</li>
+    {% endfor %}
+</ul>
+
+{% if e[0] %}
+<h5>Player-wide Upgrades: </h5>
+<ul class="list-group">
+    {% for i in e[0] %}
+        <li class="list-group-item">{{ i.name }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}

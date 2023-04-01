@@ -44,6 +44,21 @@ def add_player_post():
     return redirect('/players')
 
 
+@views.route('/view_player', methods=['POST', 'GET'])
+def view_player():
+    # Do not handle get requests at all.
+    if request.method == 'GET':
+        return redirect("/players")
+    player = database.get_player(request.form.get("PlayerName"))
+    upgrades = ett.string_to_pf2e_element_list(player[PLAYERS.Upgrades])
+    chars = database.string_list_to_list(player[PLAYERS.Characters])
+    print(chars)
+    char_num = len(chars)
+    max_chars = ett.get_available_slots(player[PLAYERS.Upgrades], [])
+    extra = (upgrades, chars, char_num, max_chars)
+    return render_template("view_player.html", user=current_user, p=player, e=extra)
+
+
 @views.route('/characters')
 def characters():
     ch = database.get_table("Characters", ["PlayerName", "Name"], 0, 15)
@@ -51,12 +66,23 @@ def characters():
     return render_template("characters.html", user=current_user, characters=ch)
 
 
-@views.route('/edit_character', methods=['POST'])
+@views.route('/view_character', methods=['POST', 'GET'])
+def view_character():
+    # Do not handle get requests at all.
+    if request.method == 'GET':
+        return redirect("/characters")
+
+
+@views.route('/edit_character', methods=['POST', 'GET'])
 @login_required
 def edit_character():
+    # Do not handle get requests at all.
+    if request.method == 'GET':
+        return redirect("/characters")
     pl = database.get_table("Players", "PlayerName")
     character = database.get_character(request.form.get("PlayerName"), request.form.get("Name"))
     player = database.get_player(request.form.get("PlayerName"))
+    danger = bool(request.form.get("danger"))
     karma = player[PLAYERS.Karma]
 
     print(character)
@@ -70,7 +96,8 @@ def edit_character():
     rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
     extra = (ett.get_level(CHARACTERS.XP), rare_unlocks, len(rare_unlocks),
              total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
-    return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra)
+
+    return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra, danger=danger)
 
 
 @views.route('/add_character')
