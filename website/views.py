@@ -1,6 +1,6 @@
 import math
 
-from flask import Blueprint, render_template, request, redirect
+from flask import Blueprint, render_template, request, redirect, flash
 from flask_login import current_user, login_required
 from src import database, ett
 views = Blueprint('views', __name__)
@@ -69,7 +69,7 @@ def edit_character():
             total_rares += i.quantity
     rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
     extra = (ett.get_level(CHARACTERS.XP), rare_unlocks, len(rare_unlocks),
-             total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory)
+             total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
     return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra)
 
 
@@ -164,7 +164,9 @@ def add_adventure_post():
     game_continuation = (request.form.get('continuation') is not None)
     game_comments = request.form.get('comments')
 
-    database.add_game(game_name, game_date, game_length, items,
-                      player_list, game_continuation, game_comments, current_user.name)
+    err = database.add_game(game_name, game_date, game_length, items,
+                            player_list, game_continuation, game_comments, current_user.name)
+    if err is not None:
+        flash("API ERROR: " + err, "error")
 
     return redirect('/adventures')

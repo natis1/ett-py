@@ -83,7 +83,7 @@
             </div>
             <div class="ettrow">
             <label for="comments" class="small_column">Comments:</label>
-            <textarea class="form-control big_column" rows="3" id="comments" name="comments"></textarea>
+            <textarea class="form-control big_column" rows="3" id="comments" name="comments">{{ c[10] }}</textarea>
             </div>
 
             <div class="ettrow">
@@ -148,8 +148,8 @@
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
-                <label for="karma" class="column">Current Karma:</label>
-                <input class="form-control column" name="karma" id="karma" step="1"
+                <label for="karma_1" class="column">Current Karma:</label>
+                <input class="form-control column" name="karma" id="karma_1" step="1"
                     type="number" value="{{ e[5] }}" readonly>
             </div>
             <div class="ettrow">
@@ -271,7 +271,8 @@
                 <label for="inventory" class="column">Current Inventory:</label>
                 <select class="form-control column" name="inventory" id="inventory">
                     {% for i in e[8] %}
-                        <option value="{{ i.name }}">{{ i.name }} - {{ i.quantity }} - {{ i.cost }}gp</option>
+                        <option value="{{ i.name }}">{% if i.quantity > 1 %}{{ i.quantity }}{% endif %}
+                            {{ i.name }} - {{ i.level }} - {{ i.cost }}gp</option>
                     {% endfor %}
                 </select>
             </div>
@@ -288,6 +289,23 @@
             <div class="ettrow">
                 <div class="column"></div>
                 <button type="submit" class="btn btn-success column">Sell/Use/Remove Items</button>
+            </div>
+            <br>
+        </form>
+        <form class="danger" action="/api/edit_character_remove_rare" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="r_unlocks" class="column">Rare Unlocks:</label>
+                <select class="form-control column" name="r_unlocks" id="r_unlocks" step="1">
+                    {% for i in e[9] %}
+                        <option value="{{ i.name }}">{{ i.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Remove Unlocked Rare</button>
             </div>
             <br>
         </form>
@@ -308,6 +326,7 @@
             </div>
             <br>
         </form>
+
         <form class="danger" action="/api/edit_character_add_unlock" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">

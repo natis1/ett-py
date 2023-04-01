@@ -455,7 +455,7 @@ def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_fac
     for i in items:
         # It's legal
         if i.level <= cur_level and i.rarity <= 1:
-            legal_items += i
+            legal_items += [i]
             continue
         # You unlocked it so it's legal
         unlocked_rare = False
@@ -466,8 +466,8 @@ def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_fac
                 unlocked_rare = True
         # It's legal but requires a rare unlock potentially
         if i.level <= cur_level and (not unlocked_rare):
-            rare_items += i
-            legal_items += i
+            rare_items += [i]
+            legal_items += [i]
 
     # Add cost
     total_cost = 0
@@ -494,8 +494,8 @@ def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_fac
     character[CHARACTERS.Items] = ett.pf2e_element_list_to_string(output_items)
     sql_exec("""
         INSERT INTO events VALUES
-        (?, '', ?, ?, ?, ?, 0, 0, ?, ?, '', '', ?, ?)
-    """, (uuid.uuid4(), timestamp, character[CHARACTERS.PlayerName],
+        (?, '', ?, ?, ?, ?, 0, 0, ?, ?, '', '', ?, '', ?)
+    """, (str(uuid.uuid4()), timestamp, character[CHARACTERS.PlayerName],
           character[CHARACTERS.Name], date, -total_cost,
           ett.pf2e_element_list_to_string(legal_items), ett.pf2e_element_list_to_string(rare_items), comments))
     return edit_character(character)
@@ -511,7 +511,7 @@ def sell_items(character, date, comments, items: list[ett.Pf2eElement], price_fa
     comments = "SELL EVENT: " + comments
     timestamp = time.time()
     cur_items = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
-    cur_gold = pl_stats[0]
+    cur_gold = character[CHARACTERS.CurrentGold]
     final_items = []
     gold_sold = 0
     for j in cur_items:
@@ -529,16 +529,16 @@ def sell_items(character, date, comments, items: list[ett.Pf2eElement], price_fa
                     j.quantity = 0
         # If we still have stock left after doing the sell, we want to add this item to the list of items to return
         if j.quantity > 0:
-            final_items += j
+            final_items += [j]
 
     final_str = ett.pf2e_element_list_to_string(final_items)
     final_gold = cur_gold + gold_sold
     character[CHARACTERS.CurrentGold] = final_gold
-    character[CHARACTERS.Items] = final_items
+    character[CHARACTERS.Items] = final_str
     sql_exec("""
             INSERT INTO events VALUES
-            (?, '', ?, ?, ?, ?, 0, 0, ?, '', ?, '', '', ?)
-        """, (uuid.uuid4(), timestamp, character[CHARACTERS.PlayerName], character[CHARACTERS.Name],
+            (?, '', ?, ?, ?, ?, 0, 0, ?, '', ?, '', '', '',  ?)
+        """, (str(uuid.uuid4()), timestamp, character[CHARACTERS.PlayerName], character[CHARACTERS.Name],
               date, gold_sold, ett.pf2e_element_list_to_string(items), comments))
     return edit_character(character)
 
@@ -605,3 +605,80 @@ def list_to_string(elements: str):
             e_str += "\n"
     return e_str
 
+
+# oh no this feels so dangerous and wrong
+def change_character_name(cur_character: list, new_name: str):
+
+    if len(cur_character) != len(CHARACTERS):
+        print("INVALID CHARACTER: ", cur_character)
+        return "INVALID CHARACTER: " + str(cur_character)
+    cur_player = get_player(cur_character[CHARACTERS.PlayerName])
+    if not cur_player:
+        print("INVALID PLAYER ON CHARACTER: " + cur_character[CHARACTERS.PlayerName])
+        return "INVALID PLAYER ON CHARACTER: " + cur_character[CHARACTERS.PlayerName]
+    cur_player = list(cur_player)
+
+    player_char_list = string_list_to_list(cur_player[PLAYERS.Characters])
+    for i in range(len(player_char_list)):
+        if player_char_list[i] == cur_character[CHARACTERS.Name]:
+            player_char_list[i] = new_name
+
+    cur_player[PLAYERS.Characters] = list_to_string(player_char_list)
+
+    sql_exec("""
+        UPDATE events SET CharacterName = ? WHERE PlayerName = ? and CharacterName = ?
+    """, (new_name, cur_character[CHARACTERS.PlayerName], cur_character[CHARACTERS.Name]))
+    sql_exec("""
+        UPDATE characters SET Name = ? WHERE PlayerName = ? and Name = ?
+    """, (new_name, cur_character[CHARACTERS.PlayerName], cur_character[CHARACTERS.Name]))
+
+    edit_player(cur_player)
+
+
+def move_character(cur_character: list, new_player_name: str):
+    new_player = get_player(new_player_name)
+    if not new_player:
+        print("INVALID NEW PLAYER TO MOVE TO: " + new_player_name)
+        return "INVALID NEW PLAYER TO MOVE TO: " + new_player_name
+    new_player = list(new_player)
+    if len(cur_character) != len(CHARACTERS):
+        print("INVALID CHARACTER: ", cur_character)
+        return "INVALID CHARACTER: " + str(cur_character)
+    cur_player = get_player(cur_character[CHARACTERS.PlayerName])
+    if not cur_player:
+        print("INVALID PLAYER ON CHARACTER: " + cur_character[CHARACTERS.PlayerName])
+        return "INVALID PLAYER ON CHARACTER: " + cur_character[CHARACTERS.PlayerName]
+    cur_player = list(cur_player)
+    player_char_list = string_list_to_list(cur_player[PLAYERS.Characters])
+    # Remove character from old player list
+    new_pc_list = []
+    for i in player_char_list:
+        if player_char_list != cur_character[CHARACTERS.Name]:
+            new_pc_list += i
+
+    cur_player[PLAYERS.Characters] = list_to_string(new_pc_list)
+
+    new_player_pc_list = string_list_to_list(new_player[PLAYERS.Characters])
+    new_player_pc_list += cur_character[CHARACTERS.Name]
+    new_player[PLAYERS.Characters] = list_to_string(new_player_pc_list)
+    # commit all the changes to DB
+    edit_player(cur_player)
+    edit_player(new_player)
+    sql_exec("""
+        UPDATE characters SET PlayerName = ? WHERE PlayerName = ? and Name = ?
+    """, (new_player_name, cur_character[CHARACTERS.PlayerName], cur_character[CHARACTERS.Name]))
+
+
+def change_player_name(old_name: str, new_name: str):
+    sql_exec("""
+        UPDATE events SET PlayerName = ? WHERE PlayerName = ?
+    """, (new_name, old_name))
+    sql_exec("""
+        UPDATE characters SET Name = ? WHERE PlayerName = ? and Name = ?
+    """, (new_name, old_name))
+    sql_exec("""
+        UPDATE games SET GM = ? WHERE GM = ?
+    """, (new_name, old_name))
+    sql_exec("""
+        UPDATE players SET PlayerName = ? WHERE PlayerName = ?
+    """, (new_name, old_name))
