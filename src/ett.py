@@ -21,7 +21,11 @@ class EttGamePlayer:
     alive: bool
 
 
+STARTING_GOLD = 15.0
 XP_PER_LEVEL = 12
+STARTING_SLOTS = 5
+NEW_FACE_BASE_COST = 5
+NEW_FACE_COST_PER = 1
 # for karma - name = name, level = cost (sorry),
 # rarity = 0 -> instant consumable, 1 -> character, 2 -> player
 KARMA_REWARDS = [Pf2eElement("Community Serviced", 1), Pf2eElement("Chosen Ally", 1), Pf2eElement("Upgrade Please", 2),
@@ -31,8 +35,40 @@ KARMA_REWARDS = [Pf2eElement("Community Serviced", 1), Pf2eElement("Chosen Ally"
                  Pf2eElement("PS Uncommon Spell", 2), Pf2eElement("PS Rare Spell", 4),
                  Pf2eElement("Skeleton Key", level=6, rarity=1), Pf2eElement("No Interest Loan", 10),
                  Pf2eElement("True Time Traveler", level=50, rarity=2), Pf2eElement("New Big Friend", 50),
+                 Pf2eElement("New Face", rarity=2),
                  Pf2eElement("Ultima Key", level=50, rarity=2)
                  ]
+
+
+def get_new_face_karma_cost(new_face: Pf2eElement, upgrades: str):
+    upgrades_elements = string_to_pf2e_element_list(upgrades)
+    new_faces = 0
+    for i in upgrades_elements:
+        if i.name == "New Face":
+            new_faces += i.quantity
+            break
+    # Karma to buy the first newface
+    start_cost = NEW_FACE_BASE_COST + (new_faces * NEW_FACE_COST_PER)
+    # Karma to buy the one after the last newface
+    end_cost = start_cost + (new_face.quantity * NEW_FACE_COST_PER)
+    return sum(range(start_cost, end_cost, NEW_FACE_COST_PER))
+
+
+def get_available_slots(upgrades: str, characters: list):
+    upgrades_elements = string_to_pf2e_element_list(upgrades)
+    new_faces = 0
+    for i in upgrades_elements:
+        if i.name == "New Face":
+            new_faces += i.quantity
+            break
+    return STARTING_SLOTS + new_faces - len(characters)
+
+
+def get_level(xp):
+    lv = 1 + math.floor(xp / XP_PER_LEVEL)
+    if lv > 20:
+        lv = 20
+    return lv
 
 
 def ett_xp_rate(player_level, party_level):
@@ -64,7 +100,7 @@ def ett_gold_add_xp(current_xp, xp_to_add):
         return -ett_gold_add_xp(net_xp, current_xp)
 
     while xp_to_add > 0:
-        cur_level = math.floor(current_xp / XP_PER_LEVEL)
+        cur_level = get_level(current_xp) - 1
         xp_to_next = XP_PER_LEVEL - (current_xp % XP_PER_LEVEL)
         # If level 20, no extra levels can be gained so quit out now.
         if cur_level >= 19:
@@ -172,6 +208,8 @@ def pf2e_element_list_to_string(elements: list[Pf2eElement]):
 
 
 def string_to_pf2e_element_list(elements: str):
+    if not elements:
+        return []
     e_str = elements.splitlines(False)
     element_list = []
     for line in e_str:

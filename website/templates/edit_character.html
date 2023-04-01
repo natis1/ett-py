@@ -20,7 +20,7 @@
 <!-- left side -->
 <div class="ettrow">
     <div class="form-group container" style="max-width:800px;flex:47.5%;">
-        <form class="danger" action="/edit_character_names" method="POST"
+        <form class="danger" action="/api/edit_character_names" method="POST"
               onsubmit="return confirm('Are you sure you want to update character name/ownership?');">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
@@ -44,7 +44,7 @@
                 </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_core" method="POST">
+        <form class="danger" action="/api/edit_character_core" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -92,7 +92,7 @@
             </div>
             <br>
         </form>
-        <form action="/edit_character_pdfurl" method="POST">
+        <form action="/api/edit_character_pdfurl" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -111,7 +111,7 @@
                 </div>
             <br>
         </form>
-        <form action="/edit_character_fvtturl" method="POST">
+        <form action="/api/edit_character_fvtturl" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -130,7 +130,7 @@
                 </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_pburl" method="POST">
+        <form class="danger" action="/api/edit_character_pburl" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -144,7 +144,7 @@
                 </div>
             <br>
         </form>
-        <form action="/edit_character_karmabuy" method="POST">
+        <form action="/api/edit_character_karmabuy" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -171,7 +171,7 @@
             </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_karmaadd" method="POST">
+        <form class="danger" action="/api/edit_character_karmaadd" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -185,7 +185,7 @@
             </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_karmaloss" method="POST">
+        <form class="danger" action="/api/edit_character_karmaloss" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -212,21 +212,31 @@
     <div style="flex:5%;"></div>
     <!-- right side -->
     <div class="form-group container" style="max-width:800px;flex:47.5%;">
-        <form action="/edit_character_buy_item" method="POST">
+        <form action="/api/edit_character_buy_item" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
-                <label for="buy_name" class="column">Item to Buy:</label>
+                <label for="t_rares" class="column">Total Rare Unlocks:</label>
+                <input class="form-control column" name="t_rares" id="t_rares" step="1"
+                    type="number" value="{{ e[3] }}" readonly>
+            </div>
+            <div class="ettrow">
+                <label for="rares_used" class="column">Rare Unlocks Used:</label>
+                <input class="form-control column" step="1" type="number" id="rares_used" name="rares_used"
+                min="0" value="{{ e[2] }}" readonly>
+            </div>
+            <div class="ettrow">
+                <label for="buy_name" class="column">Item to Buy/Rare to Unlock:</label>
                 <input class="form-control column" id="buy_name" name="buy_name" maxlength="32"
                        minlength="2" required>
             </div>
             <div class="ettrow">
-                <label for="buy_level" class="column">Item Level:</label>
+                <label for="buy_level" class="column">Level:</label>
                 <input class="form-control column" step="1" type="number" id="buy_level" name="buy_level"
                 min="0" max="30" required>
             </div>
             <div class="ettrow">
-                <label for="buy_cost" class="column">Item Cost:</label>
+                <label for="buy_cost" class="column">Cost:</label>
                 <input class="form-control column" step="0.01" type="number" id="buy_cost" name="buy_cost"
                 min="0" required>
             </div>
@@ -254,14 +264,14 @@
             </div>
             <br>
         </form>
-        <form action="/edit_character_sell_item" method="POST">
+        <form action="/api/edit_character_sell_item" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
                 <label for="inventory" class="column">Current Inventory:</label>
                 <select class="form-control column" name="inventory" id="inventory">
                     {% for i in e[8] %}
-                        <option value="{{ i.name }}">{{ i.name }} - {{ i.quantity }}</option>
+                        <option value="{{ i.name }}">{{ i.name }} - {{ i.quantity }} - {{ i.cost }}gp</option>
                     {% endfor %}
                 </select>
             </div>
@@ -277,11 +287,11 @@
             </div>
             <div class="ettrow">
                 <div class="column"></div>
-                <button type="submit" class="btn btn-success column">Sell/Use Items</button>
+                <button type="submit" class="btn btn-success column">Sell/Use/Remove Items</button>
             </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_remove_unlock" method="POST">
+        <form class="danger" action="/api/edit_character_remove_unlock" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -298,7 +308,7 @@
             </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_add_unlock" method="POST">
+        <form class="danger" action="/api/edit_character_add_unlock" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -307,14 +317,22 @@
                        minlength="2" required>
             </div>
             <div class="ettrow">
-                <label for="unlock_level" class="column">Item Level:</label>
+                <label for="unlock_level" class="column">Level:</label>
                 <input class="form-control column" step="1" type="number" id="unlock_level" name="unlock_level"
                 min="0" max="30" required>
             </div>
             <div class="ettrow">
-                <label for="unlock_cost" class="column">Item Cost:</label>
+                <label for="unlock_cost" class="column">Cost:</label>
                 <input class="form-control column" step="0.01" type="number" id="unlock_cost" name="unlock_cost"
                 min="0" required>
+            </div>
+            <div class="ettrow">
+                <label for="unlock_rarity" class="column">Rarity:</label>
+                <select class="form-control column" id="unlock_rarity" name="unlock_rarity" required>
+                    <option value="0">Common</option>
+                    <option value="1">Uncommon</option>
+                    <option value="2">Rare</option>
+                </select>
             </div>
             <div class="ettrow">
                 <div class="column"></div>
@@ -322,26 +340,7 @@
             </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_rares" method="POST">
-            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
-            <input type="hidden" name="Name" value="{{ c[1] }}">
-            <div class="ettrow">
-                <label for="t_rares" class="column">Total Rare Unlocks:</label>
-                <input class="form-control column" name="t_rares" id="t_rares" step="1"
-                    type="number" value="{{ e[3] }}" readonly>
-            </div>
-            <div class="ettrow">
-                <label for="rares_used" class="column">Rare Unlocks Used:</label>
-                <input class="form-control column" step="1" type="number" id="rares_used" name="rares_used"
-                min="0" value="{{ e[2] }}" required>
-            </div>
-            <div class="ettrow">
-                <div class="column"></div>
-                <button type="submit" class="btn btn-warning column">Update Rare Unlocks</button>
-                </div>
-            <br>
-        </form>
-        <form class="danger" action="/edit_character_xpcs" method="POST">
+        <form class="danger" action="/api/edit_character_xpcs" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">
@@ -371,7 +370,7 @@
                 </div>
             <br>
         </form>
-        <form class="danger" action="/edit_character_modify_gold" method="POST">
+        <form class="danger" action="/api/edit_character_modify_gold" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
             <div class="ettrow">

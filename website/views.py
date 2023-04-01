@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, redirect
 from flask_login import current_user, login_required
 from src import database, ett
 views = Blueprint('views', __name__)
+from src.database import CHARACTERS, PLAYERS
 
 
 @views.route('/')
@@ -56,18 +57,18 @@ def edit_character():
     pl = database.get_table("Players", "PlayerName")
     character = database.get_character(request.form.get("PlayerName"), request.form.get("Name"))
     player = database.get_player(request.form.get("PlayerName"))
-    karma = player[1]
+    karma = player[PLAYERS.Karma]
 
     print(character)
     total_rares = 1
-    rewards = ett.string_to_pf2e_element_list(character[7])
-    unlocks = ett.string_to_pf2e_element_list(character[6])
-    inventory = ett.string_to_pf2e_element_list(character[18])
+    rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
+    unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
+    inventory = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
     for i in rewards:
         if i.name == "Skeleton Key":
             total_rares += i.quantity
-    rare_unlocks = ett.string_to_pf2e_element_list(character[19])
-    extra = (1 + math.floor(character[14] / ett.XP_PER_LEVEL), rare_unlocks, len(rare_unlocks),
+    rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
+    extra = (ett.get_level(CHARACTERS.XP), rare_unlocks, len(rare_unlocks),
              total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory)
     return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra)
 

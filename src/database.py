@@ -5,7 +5,7 @@ import threading
 import traceback
 import uuid
 import time
-from enum import Enum
+from enum import Enum, IntEnum
 
 from . import ett
 
@@ -14,6 +14,76 @@ class Fetch(Enum):
     NONE = 0
     ONE = 1
     ALL = 2
+
+
+class PLAYERS(IntEnum):
+    PlayerName = 0
+    Karma = 1
+    Characters = 2
+    BonusXP = 3
+    Upgrades = 4
+    Enterer = 5
+
+
+class CHARACTERS(IntEnum):
+    PlayerName = 0
+    Name = 1
+    Ancestry = 2
+    Background = 3
+    Class = 4
+    Heritage = 5
+    Unlocks = 6
+    Rewards = 7
+    Home = 8
+    Pathbuilder = 9
+    Comments = 10
+    CommunityService = 11
+    PDFs = 12
+    FVTTs = 13
+    XP = 14
+    ExpectedGold = 15
+    CurrentGold = 16
+    Games = 17
+    Items = 18
+    Rares = 19
+    Ironman = 20
+    Enterer = 21
+
+
+class GAMES(IntEnum):
+    ID = 0
+    Name = 1
+    Date = 2
+    Enterer = 3
+    Time = 4
+    GameLevel = 5
+    Items = 6
+    GM = 7
+
+
+class HISTORIANS(IntEnum):
+    OathID = 0
+    Email = 1
+    Name = 2
+    Permissions = 3
+
+
+class EVENTS(IntEnum):
+    ID = 0
+    RelatedID = 1
+    TimeStamp = 2
+    PlayerName = 3
+    CharacterName = 4
+    EventDate = 5
+    XPAdjust = 6
+    KarmaAdjust = 7
+    GoldAdjust = 8
+    ItemsBought = 9
+    ItemsLost = 10
+    Unlocks = 11
+    Rewards = 12
+    CommunityService = 13
+    Comment = 14
 
 
 work_queue = queue.Queue()
@@ -252,36 +322,32 @@ def get_character(player_name, name):
 
 def add_character(player_name, enterer, name, ancestry, background, pc_class, heritage, pathbuilder, ironman, home='',
                   starting_xp: float = 0.0):
-    if get_player(player_name) is None:
+    p = get_player(player_name)
+    if p is None:
         print("Player does not exist " + player_name)
-        return False
+        return "Player does not exist " + player_name
+    p = list(p)
 
     if get_character(player_name, name) is not None:
         print("PC already exists with name " + name + " on player: " + player_name)
-        return False
+        return "PC already exists with name " + name + " on player: " + player_name
 
-    gold = 15.0 + ett.ett_gold_add_xp(0, starting_xp)
+    if ett.get_available_slots(p[PLAYERS.Upgrades], p[PLAYERS[CHARACTERS]]) <= 0:
+        print("Not enough character slots for PC " + name + " on player: " + player_name)
+        return "Not enough character slots for PC " + name + " on player: " + player_name
 
-    print("Adding PC " + name)
+    gold = ett.STARTING_GOLD + ett.ett_gold_add_xp(0, starting_xp)
+    # Add character to char list
+    chars = string_list_to_list(p[PLAYERS.Characters])
+    chars += [name]
+    p[PLAYERS.Characters] = list_to_string(chars)
+    edit_player(p)
+
     sql_exec("""
         INSERT INTO characters VALUES
         (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, ?, ?, '', '', '', ?, ?)""",
              (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp,
               gold, gold, ironman, enterer))
-
-
-# Add item to the player's inventory, spending any money as appropriate. This ALSO
-# adds the item to the rare unlocks if it's a rare item
-def add_items(items: list[ett.Pf2eElement]):
-    pass
-
-
-# Remove item from the player's inventory, gaining any gold on the Pf2eElement
-# gold multiplier should be set to 0 if the item was used.
-# gold multiplier should be set to half the item's value if the item was sold.
-# This also removes the item from the rare unlocks if it's a rare item.
-def remove_items(items: list[ett.Pf2eElement], gold_multiplier):
-    pass
 
 
 def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[ett.EttGamePlayer],
@@ -294,11 +360,6 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
     comments = "GAME PLAYED: " + comments
     game_level = ett.ett_party_level(players)
     items_text = ett.pf2e_element_list_to_string(items)
-    rare_items = []
-    for i in items:
-        if i.rarity == 2:
-            rare_items.append(i)
-    rare_text = ett.pf2e_element_list_to_string(rare_items)
     timestamp = time.time()
     game_id = str(uuid.uuid4())
     for pl in players:
@@ -317,124 +378,139 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                 str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5,
                 pl.gained_karma, 0, items_text, comments))
         else:
-            pl_stats = sql_exec("""
-                SELECT XP, ExpectedGold, CurrentGold, Unlocks, CommunityService, Ironman
-                from characters WHERE PlayerName = ? and Name = ?
-            """, (pl.player_name, pl.name), Fetch.ONE)
+            character = get_character(pl.player_name, pl.name)
             # This means the PC is invalid
-            if pl_stats is None:
+            if character is None:
                 print("ERROR: Character with player name: " + pl.player_name +
                       " and name: " + pl.name + " does not exist!")
                 continue
-            expected_level = (pl_stats[0] / 12) + 1
+            character = list(character)
+            expected_level = ett.get_level(character[CHARACTERS.XP])
             tt_up = (expected_level < pl.player_level) and (not continuation)
             net_karma = pl.gained_karma - tt_up
-            if not pl_stats[1]:
-                pl_stats[1] = 0
-            if not pl_stats[2]:
-                pl_stats[2] = 0
+            if not character[CHARACTERS.ExpectedGold]:
+                character[CHARACTERS.ExpectedGold] = 0
+            if not character[CHARACTERS.CurrentGold]:
+                character[CHARACTERS.CurrentGold] = 0
             # subtract any community service you need to do
-            cs_remaining = pl_stats[4]
+            cs_remaining = character[CHARACTERS.CommunityService]
             cs_change = -cs_remaining
-            if not (pl_stats[4] == '' or pl_stats[4] == 0):
-                if (pl_stats[4] - pl.time_played) <= 0:
+            if not (character[CHARACTERS.CommunityService] == '' or character[CHARACTERS.CommunityService] == 0):
+                if (character[CHARACTERS.CommunityService] - pl.time_played) <= 0:
                     cs_remaining = 0
-                    pl.time_played = pl.time_played - pl_stats[4]
+                    pl.time_played = pl.time_played - character[CHARACTERS.CommunityService]
                 else:
-                    cs_remaining = pl_stats[4] - pl.time_played
+                    cs_remaining = character[CHARACTERS.CommunityService] - pl.time_played
                     pl.time_played = 0
             # add gold and XP
 
             xp_added = ett.ett_xp_rate(pl.player_level, game_level) * pl.time_played
-            adventure_gold = ett.ett_gold_add_xp(pl_stats[0], xp_added)
-            total_xp = xp_added + pl_stats[0]
-            expected_gold = adventure_gold + pl_stats[1]
-            current_gold = adventure_gold + pl_stats[2]
+            adventure_gold = ett.ett_gold_add_xp(character[CHARACTERS.XP], xp_added)
+            total_xp = xp_added + character[CHARACTERS.XP]
+            character[CHARACTERS.ExpectedGold] = adventure_gold + character[CHARACTERS.ExpectedGold]
+            character[CHARACTERS.CurrentGold] = adventure_gold + character[CHARACTERS.CurrentGold]
 
-            cur_unlocks = ett.string_to_pf2e_element_list(pl_stats[3])
-            unlocks = ett.ett_parse_unlocks(cur_unlocks, items, [], (1 + math.floor(total_xp / 12)))
-            unlocks_str = ett.pf2e_element_list_to_string(unlocks)
+            cur_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
+            # Even if no new items are unlocked. This removes all AT LEVEL items from the
+            # unlocked list.
+            unlocks = ett.ett_parse_unlocks(cur_unlocks, items, [], ett.get_level(total_xp))
+            character[CHARACTERS.Unlocks] = ett.pf2e_element_list_to_string(unlocks)
             # If you died, your community service gets set from your current level
             # But you at least gain the xp from playing.
             if not pl.alive:
-                cs_remaining = ett.ett_died_cs(pl, (1 + math.floor(total_xp / 12)), pl_stats[5])
+                cs_remaining = ett.ett_died_cs(pl, ett.get_level(total_xp), character[CHARACTERS.Ironman])
                 cs_change += cs_remaining
+
+            # Add game to player games list
+            games = string_list_to_list(character[CHARACTERS.Games])
+            games += [game_id]
+            character[CHARACTERS.Games] = list_to_string(games)
+
             # Update the player with the new game information
 
-            sql_exec("""
-                UPDATE characters SET XP = ?, ExpectedGold = ?, CurrentGold = ?, Unlocks = ?, CommunityService = ?
-                where PlayerName = ? and Name = ?
-            """, (total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name))
-            add_karma_to_player(pl.name, net_karma)
+            character[CHARACTERS.CommunityService] = cs_remaining
+            character[CHARACTERS.XP] = total_xp
             sql_exec("""
                 INSERT INTO events VALUES
                 (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?, ?)
             """, (str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, xp_added, net_karma,
                   adventure_gold, items_text, cs_change, comments))
-            print("Updated player with the following information: ")
-            print("total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name")
-            print(total_xp, expected_gold, current_gold, unlocks_str, cs_remaining, pl.player_name, pl.name)
-            print("Karma added: " + str(net_karma))
+            add_karma_to_player(pl.name, net_karma)
+            edit_character(character)
 
 
-def buy_items(player_name, name, date, comments, items: list[ett.Pf2eElement], price_factor: float = 1.0):
+def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_factor: float = 1.0):
+    if len(character) != len(CHARACTERS):
+        print("INVALID CHARACTER: ", character)
+        return "Invalid character. Unable to parse buy_items. Please report as a bug."
+
     comments = "BUY EVENT: " + comments
-    pl_stats = sql_exec("""
-        SELECT CurrentGold, Unlocks, Items, XP
-        from characters WHERE PlayerName = ? and Name = ?
-    """, (player_name, name), Fetch.ONE)
-    if pl_stats is None:
-        print("ERROR: Character: " + player_name + ", " + name + "does not exist!")
-        return
-
     timestamp = time.time()
+
+    # Check if items are legal
+    cur_level = ett.get_level(character[CHARACTERS.XP])
+    unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
+    legal_items = []
+    rare_items = []
+    for i in items:
+        # It's legal
+        if i.level <= cur_level and i.rarity <= 1:
+            legal_items += i
+            continue
+        # You unlocked it so it's legal
+        unlocked_rare = False
+        for j in unlocks:
+            # You have the right level for it
+            if i.name == j.name and i.level <= (cur_level + 2):
+                legal_items += [i]
+                unlocked_rare = True
+        # It's legal but requires a rare unlock potentially
+        if i.level <= cur_level and (not unlocked_rare):
+            rare_items += i
+            legal_items += i
+
     # Add cost
     total_cost = 0
     for i in items:
         total_cost += i.cost * i.quantity * price_factor
-    final_money = pl_stats[0] - total_cost
-    # Now add rare items to the unlocks if applicable
-    cur_unlocks = ett.string_to_pf2e_element_list(pl_stats[1])
-    unlocks = ett.ett_parse_unlocks(cur_unlocks, items, [], 1 + (math.floor(pl_stats[3] / 12)))
-    unlocks_str = ett.pf2e_element_list_to_string(unlocks)
+    final_money = character[CHARACTERS.CurrentGold] - total_cost
+    # Now add rare items to the rares if applicable
+    cur_rares = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
+    rares = ett.ett_parse_unlocks(cur_rares, rare_items, [], 20)
     # Finally add all items together
-    cur_items = ett.string_to_pf2e_element_list(pl_stats[2])
-    output_items = []
-    for j in cur_items:
-        temp_item = j
-        for i in items:
-            if i.name == j.name:
-                temp_item.quantity += i.quantity
-        output_items += temp_item
-    items_str = ett.pf2e_element_list_to_string(output_items)
-    sql_exec("""
-                    UPDATE characters SET CurrentGold = ?, Unlocks = ?, Items = ?
-                    where PlayerName = ? and Name = ?
-                """, (final_money, unlocks_str, items_str, player_name, name))
+    cur_items = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
+    output_items = cur_items
+    for i in legal_items:
+        found_item = False
+        for j in range(len(cur_items)):
+            if i.name == cur_items[j].name:
+                output_items[j].quantity += i.quantity
+                found_item = True
+                break
+        if not found_item:
+            output_items += [i]
+    character[CHARACTERS.CurrentGold] = final_money
+    character[CHARACTERS.Rares] = ett.pf2e_element_list_to_string(rares)
+    character[CHARACTERS.Items] = ett.pf2e_element_list_to_string(output_items)
     sql_exec("""
         INSERT INTO events VALUES
-        (?, ?, ?, ?, ?, 0, 0, 0, ?, '', ?, '', ?)
-    """, (uuid.uuid4(), timestamp, player_name, name, date,
-          items_str, unlocks_str, comments))
-    print("Updated player with the following information: ")
-    print("final_money, unlocks_str, items_str, player_name, name")
-    print(final_money, unlocks_str, items_str, player_name, name)
+        (?, '', ?, ?, ?, ?, 0, 0, ?, ?, '', '', ?, ?)
+    """, (uuid.uuid4(), timestamp, character[CHARACTERS.PlayerName],
+          character[CHARACTERS.Name], date, -total_cost,
+          ett.pf2e_element_list_to_string(legal_items), ett.pf2e_element_list_to_string(rare_items), comments))
+    return edit_character(character)
 
 
 # For selling items. Also for using items in an adventure
 # set price factor to 0 if you are using an item and price factor to
-def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], price_factor: float = 0.5):
-    comments = "SELL EVENT: " + comments
-    pl_stats = sql_exec("""
-            SELECT CurrentGold, Items
-            from characters WHERE PlayerName = ? and Name = ?
-        """, (player_name, name), Fetch.ONE)
-    if pl_stats is None:
-        print("ERROR: Character: " + player_name + ", " + name + "does not exist!")
-        return
+def sell_items(character, date, comments, items: list[ett.Pf2eElement], price_factor: float = 0.5):
+    if len(character) != len(CHARACTERS):
+        print("INVALID CHARACTER: ", character)
+        return "Invalid character. Unable to parse sell_items. Please report as a bug."
 
+    comments = "SELL EVENT: " + comments
     timestamp = time.time()
-    cur_items = ett.string_to_pf2e_element_list(pl_stats[1])
+    cur_items = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
     cur_gold = pl_stats[0]
     final_items = []
     gold_sold = 0
@@ -444,10 +520,12 @@ def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], 
                 # We are able to sell all of our items
                 if i.quantity <= j.quantity:
                     j.quantity -= i.quantity
-                    gold_sold += i.quantity * price_factor * i.cost
+                    # NOTE: DO NOT PULL COST FROM i.
+                    # We do not expect i to hold the cost. j should.
+                    gold_sold += i.quantity * price_factor * j.cost
                 else:
                     # Otherwise, sell all that we can
-                    gold_sold += j.quantity * price_factor * i.cost
+                    gold_sold += j.quantity * price_factor * j.cost
                     j.quantity = 0
         # If we still have stock left after doing the sell, we want to add this item to the list of items to return
         if j.quantity > 0:
@@ -455,19 +533,75 @@ def sell_items(player_name, name, date, comments, items: list[ett.Pf2eElement], 
 
     final_str = ett.pf2e_element_list_to_string(final_items)
     final_gold = cur_gold + gold_sold
-    sql_exec("""
-                    UPDATE characters SET CurrentGold = ?, Items = ?
-                    where PlayerName = ? and Name = ?
-                """, (final_gold, final_str, player_name, name))
+    character[CHARACTERS.CurrentGold] = final_gold
+    character[CHARACTERS.Items] = final_items
     sql_exec("""
             INSERT INTO events VALUES
-            (?, ?, ?, ?, ?, 0, 0, 0, '', ?, '', '', ?)
-        """, (uuid.uuid4(), timestamp, player_name, name, date,
-              ett.pf2e_element_list_to_string(items), comments))
-    print("Updated player with the following information: ")
-    print("final_gold, final_str, items sold, player_name, name")
-    print(final_gold, final_str, ett.pf2e_element_list_to_string(items), player_name, name)
+            (?, '', ?, ?, ?, ?, 0, 0, ?, '', ?, '', '', ?)
+        """, (uuid.uuid4(), timestamp, character[CHARACTERS.PlayerName], character[CHARACTERS.Name],
+              date, gold_sold, ett.pf2e_element_list_to_string(items), comments))
+    return edit_character(character)
+
+
+def edit_player(player: list):
+    if len(player) != len(PLAYERS):
+        print("INVALID PLAYER: ", player)
+        return "INVALID PLAYER: " + str(player)
+
+    cur_player = list(get_player(player[PLAYERS.PlayerName]))
+
+    for i in range(len(player)):
+        if player[i] is None or i < 1:
+            player[i] = cur_player[i]
+
+    # move playername to the end so that query works
+    player = player[1:] + player[:1]
+    sql_exec("""UPDATE players SET Karma = ?, Characters = ?, BonusXP = ?, Upgrades = ?, Enterer = ?
+    WHERE PlayerName = ?
+    """, tuple(player))
+
+
+# NOTE that character must be a correctly ordered list
+def edit_character(character: list):
+    if len(character) != len(CHARACTERS):
+        print("INVALID CHARACTER: ", character)
+        return "INVALID CHARACTER: " + str(character)
+
+    cur_char = list(get_character(character[CHARACTERS.PlayerName], character[CHARACTERS.Name]))
+
+    for i in range(len(character)):
+        if character[i] is None or i < 2:
+            character[i] = cur_char[i]
+
+    # move playername and name to the end so that it works
+    character = character[2:] + character[:2]
+    # Final character Data to write:
+    sql_exec("""UPDATE characters SET Ancestry = ?, Background = ?, Class = ?, Heritage = ?,
+        Unlocks = ?, Rewards = ?, Home = ?, Pathbuilder = ?, Comments = ?, CommunityService = ?,
+        PDFs = ?, FVTTs = ?, XP = ?, ExpectedGold = ?, CurrentGold = ?, Games = ?, Items = ?,
+        Rares = ?, Ironman = ?, Enterer = ? WHERE PlayerName = ? and Name = ?
+    """, tuple(character))
 
 # TODO: Generate all items, gold, unlocked items, xp, etc, on a character, from just their
 # audit history. By going through the audit history ordered by timestamp for a character
 # and applying it to that character.
+
+
+def string_list_to_list(elements: str):
+    if not elements:
+        return []
+    e_str = elements.splitlines(False)
+    element_list = []
+    for line in e_str:
+        element_list += [line]
+    return element_list
+
+
+def list_to_string(elements: str):
+    e_str = ""
+    for element_index in range(len(elements)):
+        e_str += elements[element_index]
+        if element_index < (len(elements) - 1):
+            e_str += "\n"
+    return e_str
+
