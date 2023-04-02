@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Edit Character{% endblock %}
+{% block javascript %}
+<script type="text/javascript"
+        src="{{ url_for('static', filename='edit.js') }}"></script>
+{% endblock %}
+{% block content %}
+    <h3>Note: For now, most adventure stats cannot be auto-corrected.</h3>
+    <h3>If you want to fix an adventure, please delete the adventure then revert every
+        automated change on all the characters. Which are<br>
+        (in edit character for PCs): XP, items unlocked, karma.<br>
+        (in edit player on GMs): Unassigned XP, karma</h3>
+
+<div class="form-group container" style="max-width:900px;">
+    <h3 class="column">{{ a[1] }} - {{ a[2] }}</h3>
+    <br>
+    <form class="danger" action="/api/edit_adventure_gm" method="POST">
+        <input type="hidden" name="ID" value="{{ a[0] }}">
+        <input type="hidden" name="danger" value="X">
+        <div class="ettrow">
+                <label for="gm" class="column">GM:</label>
+                <select class="form-control column" id="gm" name="gm">
+                    <option selected>{{ a[7] }}</option>
+                    {% for player in players %}
+                    <option>{{ player[0] }} </option>
+                    {% endfor %}
+                </select>
+            </div>
+        <div class="ettrow">
+            <div class="column"></div>
+            <button type="submit" class="btn btn-warning column">Change GM</button>
+        </div>
+        <br>
+    </form>
+    <form class="danger" action="/api/edit_adventure_name" method="POST">
+        <input type="hidden" name="ID" value="{{ a[0] }}">
+        <input type="hidden" name="danger" value="X">
+        <div class="ettrow">
+            <label for="name" class="column">Adventure Name:</label>
+            <input class="form-control column" name="name" id="name" maxlength="64"
+                   minlength="2" value="{{ a[1] }}" required>
+        </div>
+        <div class="ettrow">
+      <label for="date" class="column">Adventure Date:</label>
+      <input class="form-control column" value="{{ a[2] }}" name="date" id="date" type="date" required>
+        </div>
+        <div class="ettrow">
+            <div class="column"></div>
+            <button type="submit" class="btn btn-danger column">Update Name/Date</button>
+        </div>
+        <br>
+    </form>
+    <br>
+    <br>
+    <form class="danger" action="/api/edit_adventure_delete" method="POST"
+          onsubmit="return confirm('Are you sure you want to delete this adventure? You will lose all related data.');">
+        <input type="hidden" name="ID" value="{{ a[0] }}">
+        <div class="ettrow">
+            <div class="column"></div>
+            <button type="submit" class="btn btn-danger column">Delete Adventure</button>
+        </div>
+        <br>
+    </form>
+</div>
+
+{% endblock %}

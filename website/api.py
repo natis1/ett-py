@@ -22,7 +22,7 @@ def get_character():
     name = request.form.get("Name", type=str)
     cur_char = database.get_character(player, name)
     if cur_char is None:
-        return api_error()
+        return None
     return list(cur_char)
 
 
@@ -30,8 +30,16 @@ def get_player():
     player = request.form.get("PlayerName", type=str)
     cur_player = database.get_player(player)
     if cur_player is None:
-        return api_error()
+        return None
     return list(cur_player)
+
+
+def get_adventure():
+    adv_id = request.form.get("ID")
+    cur_adventure = database.get_row("games", "ID", adv_id)
+    if cur_adventure is None:
+        return None
+    return list(cur_adventure)
 
 
 def get_query_data():
@@ -104,6 +112,135 @@ def adventures():
     }
 
 
+@api.route('/edit_player_xptransfer', methods=['POST'])
+@login_required
+def edit_player_xptransfer():
+    xp_target = request.form.get("sendto", type=str)
+    xp_sent = request.form.get("xpsend", type=float)
+    if not xp_target or not xp_sent:
+        return api_error()
+    pl = get_player()
+    if not pl:
+        return api_error()
+    char = database.get_character(pl[PLAYERS.PlayerName], xp_target)
+    if char is None:
+        return api_error()
+    char = list(char)
+    pl[PLAYERS.BonusXP] -= xp_sent
+    gold_add = ett.ett_gold_add_xp(char[CHARACTERS.XP], xp_sent)
+    char[CHARACTERS.XP] += xp_sent
+    char[CHARACTERS.CurrentGold] += gold_add
+    char[CHARACTERS.ExpectedGold] += gold_add
+    err = database.edit_player(pl)
+    if err:
+        flash("ERROR: " + err, "error")
+    err = database.edit_character(char)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/edit_player", code=307)
+
+
+@api.route('/edit_player_xpedit', methods=['POST'])
+@login_required
+def edit_player_xpedit():
+    new_xp = request.form.get("xp", type=float)
+    if new_xp is None:
+        return api_error()
+    pl = get_player()
+    if not pl:
+        return api_error()
+    pl[PLAYERS.BonusXP] = new_xp
+    err = database.edit_player(pl)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/edit_player", code=307)
+
+
+@api.route('/edit_player_karmaadd', methods=['POST'])
+@login_required
+def edit_player_karmaadd():
+    new_karma = request.form.get("karma", type=int)
+    if new_karma is None:
+        return api_error()
+    pl = get_player()
+    if not pl:
+        return api_error()
+    pl[PLAYERS.Karma] = new_karma
+    err = database.edit_player(pl)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/edit_player", code=307)
+
+
+@api.route('/edit_player_karmadel', methods=['POST'])
+@login_required
+def edit_player_karmadel():
+    loss_item = request.form.get("k_unlocks", type=str)
+    loss_number = request.form.get("remove_num", type=int)
+    if not loss_number or not loss_item:
+        return api_error()
+    pl = get_player()
+    if not pl:
+        return api_error()
+    item = ett.Pf2eElement(loss_item, quantity=loss_number)
+    rewards = ett.string_to_pf2e_element_list(pl[PLAYERS.Upgrades])
+    out_rewards = []
+    for r in rewards:
+        store_reward = True
+        if item.name == r.name:
+            # remove all
+            if item.quantity >= r.quantity:
+                store_reward = False
+            else:
+                r.quantity -= item.quantity
+        if store_reward:
+            out_rewards += [r]
+    pl[PLAYERS.Upgrades] = ett.pf2e_element_list_to_string(out_rewards)
+    err = database.edit_player(pl)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/edit_player", code=307)
+
+
+@api.route('/edit_player_name', methods=['POST'])
+@login_required
+def edit_player_name():
+    new_name = request.form.get("PlayerName2")
+    if not new_name:
+        return api_error()
+    pl = get_player()
+    if not pl:
+        return api_error()
+    new_pl_test = database.get_player(new_name)
+    if new_pl_test:
+        flash("API ERROR: Player with name " + new_pl_test + " already exists!", "error")
+        return redirect("/edit_player", code=307)
+    err = database.change_player_name(pl[PLAYERS.PlayerName], new_name)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/players")
+
+
+@api.route('/edit_player_delete', methods=['POST'])
+@login_required
+def edit_player_delete():
+    pl = get_player()
+    if not pl:
+        return api_error()
+    database.delete_player(pl[PLAYERS.PlayerName])
+    return redirect("/players")
+
+
+@api.route('/edit_character_delete', methods=['POST'])
+@login_required
+def edit_character_delete():
+    c = get_character()
+    if not c:
+        return api_error()
+    database.delete_character(c[CHARACTERS.PlayerName], c[CHARACTERS.Name])
+    return redirect('/characters')
+
+
 @api.route('/edit_character_names', methods=['POST'])
 @login_required
 def edit_character_names():
@@ -112,6 +249,8 @@ def edit_character_names():
     if not new_player or not new_char_name:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     # The player changed. move to new player
     if new_player != cur_char[CHARACTERS.PlayerName]:
         e = database.move_character(cur_char, new_player)
@@ -142,6 +281,8 @@ def edit_character_core():
         return api_error()
 
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     cur_char[CHARACTERS.Ancestry] = ancestry
     cur_char[CHARACTERS.Heritage] = heritage
     cur_char[CHARACTERS.Background] = background
@@ -166,6 +307,8 @@ def edit_character_pdfurl():
     level = level - 1
 
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     pdf_urls = cur_char[CHARACTERS.PDFs]
     # Discard invalid fvtt url entries in DB
     if not pdf_urls:
@@ -194,6 +337,8 @@ def edit_character_fvtturl():
     level = level - 1
 
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     fvtt_urls = cur_char[CHARACTERS.FVTTs]
     # Discard invalid fvtt url entries in DB
     if not fvtt_urls:
@@ -219,6 +364,8 @@ def edit_character_pburl():
     if not url:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     cur_char[CHARACTERS.Pathbuilder] = url
     err = database.edit_character(cur_char)
     if err:
@@ -237,7 +384,11 @@ def edit_character_karmabuy():
     if not valid_buy_items:
         return api_error()
     player = get_player()
+    if not pl:
+        return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     buy_item = valid_buy_items[0]
     buy_item.quantity = qty
     cost = buy_item.level * buy_item.quantity
@@ -283,9 +434,11 @@ def edit_character_karmabuy():
 @login_required
 def edit_character_karmaadd():
     new_karma = request.form.get("karma")
-    if not new_karma:
+    if new_karma is None:
         return api_error()
     pl = get_player()
+    if not pl:
+        return api_error()
     pl[PLAYERS.Karma] = new_karma
     err = database.edit_player(pl)
     if err:
@@ -301,6 +454,8 @@ def edit_character_karmaloss():
     if not loss_number or not loss_item:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     item = ett.Pf2eElement(loss_item, quantity=loss_number)
     rewards = ett.string_to_pf2e_element_list(cur_char[CHARACTERS.Rewards])
     out_rewards = []
@@ -334,6 +489,8 @@ def edit_character_buy_item():
             or value_factor is None or rarity is None):
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     items = [ett.Pf2eElement(buy_name, level, cost, rarity, qty)]
     err = database.buy_items(cur_char, datetime.today().strftime('%Y-%m-%d'),
                              f"WEB API v{API_VERSION} edit_character_buy_item",
@@ -352,6 +509,8 @@ def edit_character_sell_item():
     if not item_sold or sell_value is None or not sell_qty:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     items = [ett.Pf2eElement(item_sold, quantity=sell_qty)]
     err = database.sell_items(cur_char, datetime.today().strftime('%Y-%m-%d'),
                               f"WEB API v{API_VERSION} edit_character_sell_item",
@@ -368,6 +527,8 @@ def edit_character_remove_rare():
     if not remove_item:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     el = ett.Pf2eElement(remove_item)
     cur_unlocks = ett.string_to_pf2e_element_list(cur_char[CHARACTERS.Rares])
     new_unlocks = ett.ett_parse_unlocks(cur_unlocks, [], [el], 0)
@@ -385,6 +546,8 @@ def edit_character_remove_unlock():
     if not remove_item:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     el = ett.Pf2eElement(remove_item)
     cur_unlocks = ett.string_to_pf2e_element_list(cur_char[CHARACTERS.Unlocks])
     new_unlocks = ett.ett_parse_unlocks(cur_unlocks, [], [el], ett.get_level(cur_char[CHARACTERS.XP]))
@@ -405,6 +568,8 @@ def edit_character_add_unlock():
     if not name or level is None or cost is None or rarity is None:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     el = ett.Pf2eElement(name, level, cost, rarity)
     cur_unlocks = ett.string_to_pf2e_element_list(cur_char[CHARACTERS.Unlocks])
     new_unlocks = ett.ett_parse_unlocks(cur_unlocks, [el], [], ett.get_level(cur_char[CHARACTERS.XP]))
@@ -423,6 +588,8 @@ def edit_character_xpcs():
     if xp is None or cs is None:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     gold_change = ett.ett_gold_add_xp(cur_char[CHARACTERS.XP], xp - cur_char[CHARACTERS.XP])
     cur_char[CHARACTERS.CurrentGold] += gold_change
     # Reset expected gold to normal amount just in case
@@ -443,8 +610,63 @@ def edit_character_modify_gold():
     if gold is None:
         return api_error()
     cur_char = get_character()
+    if not cur_char:
+        return api_error()
     cur_char[CHARACTERS.CurrentGold] = gold
     err = database.edit_character(cur_char)
     if err:
         flash("ERROR: " + err, "error")
     return redirect("/edit_character", code=307)
+
+
+@api.route('/edit_adventure_name', methods=['POST'])
+@login_required
+def edit_adventure_name():
+    name = request.form.get("name")
+    date = request.form.get("date")
+    if not name or not date:
+        return api_error()
+    # The adventure you're trying to rename to already exists.
+    test_adv = database.get_game(name, date)
+    if test_adv:
+        flash("API ERROR: adventure already exists " + name + ", " + date, "error")
+        return redirect("/adventures")
+    a = get_adventure()
+    if not a:
+        return api_error()
+    a[GAMES.Name] = name
+    a[GAMES.Date] = date
+    err = database.edit_game(a)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/adventures")
+
+
+@api.route('/edit_adventure_gm', methods=['POST'])
+@login_required
+def edit_adventure_gm():
+    gm = request.form.get("gm")
+    if not gm:
+        return api_error()
+    test_gm = database.get_player(gm)
+    if not test_gm:
+        return api_error()
+
+    a = get_adventure()
+    if not a:
+        return api_error()
+    a[GAMES.GM] = gm
+    err = database.edit_game(a)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/adventures")
+
+
+@api.route('/edit_adventure_delete', methods=['POST'])
+@login_required
+def edit_adventure_delete():
+    a = get_adventure()
+    if not a:
+        return api_error()
+    database.delete_game(a[GAMES.ID])
+    return redirect("/adventures")

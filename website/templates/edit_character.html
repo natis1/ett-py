@@ -2,11 +2,11 @@
 {% block title %}Edit Character{% endblock %}
 {% block javascript %}
 <script type="text/javascript"
-            src="{{ url_for('static', filename='edit.js') }}"></script>
+        src="{{ url_for('static', filename='edit.js') }}"></script>
 {% endblock %}
 {% block content %}
 <div class="ettrow">
-<h3 class="column">{{ c[0] }} - {{ c[1] }} - {{ e[0] }}</h3>
+    <h3 class="column">{{ c[0] }} - {{ c[1] }} - {{ e[0] }}</h3>
     <div class="column ettrow">
         <div class="column">
             <label for="show_danger">Show Adjustments: </label>
@@ -42,7 +42,7 @@
             <div class="ettrow">
                 <div class="column"></div>
                 <button type="submit" class="btn btn-danger column">Update Player Information</button>
-                </div>
+            </div>
             <br>
         </form>
         <form class="danger" action="/api/edit_character_core" method="POST">
@@ -84,8 +84,8 @@
                 </select>
             </div>
             <div class="ettrow">
-            <label for="comments" class="small_column">Comments:</label>
-            <textarea class="form-control big_column" rows="3" id="comments" name="comments">{{ c[10] }}</textarea>
+                <label for="comments" class="small_column">Comments:</label>
+                <textarea class="form-control big_column" rows="3" id="comments" name="comments">{{ c[10] }}</textarea>
             </div>
 
             <div class="ettrow">
@@ -100,17 +100,17 @@
             <div class="ettrow">
                 <label for="pdfurl" class="small_column">PDF URL:</label>
                 <input class="form-control big_column" name="url" id="pdfurl"
-                    type="url" placeholder="https://example.com">
+                       type="url" placeholder="https://example.com">
             </div>
             <div class="ettrow">
                 <label for="pdflevel" class="small_column">PDF Level:</label>
                 <input class="form-control big_column" step="1" type="number" id="pdflevel" name="level"
-                min="1" max="20" required>
+                       min="1" max="20" required>
             </div>
             <div class="ettrow">
                 <div class="small_column"></div>
                 <button type="submit" class="btn btn-success big_column">Update/Add PDF URL</button>
-                </div>
+            </div>
             <br>
         </form>
         <form action="/api/edit_character_fvtturl" method="POST">
@@ -119,17 +119,17 @@
             <div class="ettrow">
                 <label for="fvtturl" class="small_column">FVTT json URL:</label>
                 <input class="form-control big_column" name="url" id="fvtturl"
-                    type="url" placeholder="https://example.com">
+                       type="url" placeholder="https://example.com">
             </div>
             <div class="ettrow">
                 <label for="fvttlevel" class="small_column">FVTT Level:</label>
                 <input class="form-control big_column" step="1" type="number" id="fvttlevel" name="level"
-                min="1" max="20" required>
+                       min="1" max="20" required>
             </div>
             <div class="ettrow">
                 <div class="small_column"></div>
                 <button type="submit" class="btn btn-success big_column">Update/Add FVTT URL</button>
-                </div>
+            </div>
             <br>
         </form>
         <form class="danger" action="/api/edit_character_pburl" method="POST">
@@ -139,12 +139,12 @@
             <div class="ettrow">
                 <label for="url" class="small_column">Pathbuilder URL:</label>
                 <input class="form-control big_column" name="url" id="url"
-                    type="url" value="{{ c[9] }}">
+                       type="url" value="{{ c[9] }}">
             </div>
             <div class="ettrow">
                 <div class="small_column"></div>
                 <button type="submit" class="btn btn-warning big_column">Update Pathbuilder URL</button>
-                </div>
+            </div>
             <br>
         </form>
         <form action="/api/edit_character_karmabuy" method="POST">
@@ -153,20 +153,20 @@
             <div class="ettrow">
                 <label for="karma_1" class="column">Current Karma:</label>
                 <input class="form-control column" name="karma" id="karma_1" step="1"
-                    type="number" value="{{ e[5] }}" readonly>
+                       type="number" value="{{ e[5] }}" readonly>
             </div>
             <div class="ettrow">
                 <label for="k_buy" class="column">Reward to Buy:</label>
                 <select class="form-control column" name="k_buy" id="k_buy" step="1">
                     {% for i in e[6] %}
-                        <option value="{{ i.name }}">{{ i.name }} - {{ i.level }}</option>
+                    <option value="{{ i.name }}">{{ i.name }} - {{ i.level }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="ettrow">
                 <label for="k_qty" class="column">Quantity/Level to buy:</label>
                 <input class="form-control column" step="1" type="number" id="k_qty" name="k_qty"
-                min="1" required>
+                       min="1" required>
             </div>
             <div class="ettrow">
                 <div class="column"></div>
@@ -181,7 +181,7 @@
             <div class="ettrow">
                 <label for="karma" class="column">Current Karma:</label>
                 <input class="form-control column" name="karma" id="karma" step="1"
-                    type="number" value="{{ e[5] }}">
+                       type="number" value="{{ e[5] }}">
             </div>
             <div class="ettrow">
                 <div class="column"></div>
@@ -197,14 +197,14 @@
                 <label for="k_unlocks" class="column">Karma Unlocks:</label>
                 <select class="form-control column" name="k_unlocks" id="k_unlocks">
                     {% for i in e[4] %}
-                        <option value="{{ i.name }}">{{ i.name }} - {{ i.quantity }}</option>
+                    <option value="{{ i.name }}">{{ i.name }} - {{ i.quantity }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="ettrow">
                 <label for="remove_num" class="column">Number to remove:</label>
                 <input class="form-control column" step="1" type="number" id="remove_num" name="remove_num"
-                min="1" required>
+                       min="1" required>
             </div>
             <div class="ettrow">
                 <div class="column"></div>
@@ -223,12 +223,12 @@
             <div class="ettrow">
                 <label for="t_rares" class="column">Total Rare Unlocks:</label>
                 <input class="form-control column" name="t_rares" id="t_rares" step="1"
-                    type="number" value="{{ e[3] }}" readonly>
+                       type="number" value="{{ e[3] }}" readonly>
             </div>
             <div class="ettrow">
                 <label for="rares_used" class="column">Rare Unlocks Used:</label>
                 <input class="form-control column" step="1" type="number" id="rares_used" name="rares_used"
-                min="0" value="{{ e[2] }}" readonly>
+                       min="0" value="{{ e[2] }}" readonly>
             </div>
             <div class="ettrow">
                 <label for="c_gold" class="column">Current Gold:</label>
@@ -242,22 +242,22 @@
             <div class="ettrow">
                 <label for="buy_level" class="column">Level:</label>
                 <input class="form-control column" step="1" type="number" id="buy_level" name="buy_level"
-                min="0" max="30" required>
+                       min="0" max="30" required>
             </div>
             <div class="ettrow">
                 <label for="buy_cost" class="column">Cost:</label>
                 <input class="form-control column" step="0.01" type="number" id="buy_cost" name="buy_cost"
-                min="0" required>
+                       min="0" required>
             </div>
             <div class="ettrow">
                 <label for="buy_qty" class="column">Quantity:</label>
                 <input class="form-control column" step="1" type="number" id="buy_qty" name="buy_qty"
-                min="1" required>
+                       min="1" required>
             </div>
             <div class="ettrow">
                 <label for="cost_factor" class="column">Cost Factor:</label>
                 <input class="form-control column" step="0.01" type="number" id="cost_factor" name="cost_factor"
-                min="0" max="1" value="1" required>
+                       min="0" max="1" value="1" required>
             </div>
             <div class="ettrow">
                 <label for="buy_rarity" class="column">Rarity:</label>
@@ -269,7 +269,7 @@
             </div>
             <div class="ettrow">
                 <div class="column"></div>
-                <button type="submit" class="btn btn-success column">Buy Item</button>
+                <button type="submit" class="btn btn-success column">Buy Item/Add Rare</button>
             </div>
             <br>
         </form>
@@ -280,24 +280,24 @@
                 <label for="inventory" class="column">Current Inventory:</label>
                 <select class="form-control column" name="inventory" id="inventory">
                     {% for i in e[8] %}
-                        <option value="{{ i.name }}">{% if i.quantity > 1 %}{{ i.quantity }}{% endif %}
-                            {{ i.name }} - {{ i.level }} - {{ i.cost }}gp</option>
+                    <option value="{{ i.name }}">{% if i.quantity > 1 %}{{ i.quantity }}{% endif %}
+                        {{ i.name }} - {{ i.level }} - {{ i.cost }}gp</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="ettrow">
                 <label for="sell_qty" class="column">Sell Quantity:</label>
                 <input class="form-control column" step="1" type="number" id="sell_qty" name="sell_qty"
-                min="1" required>
+                       min="1" required>
             </div>
             <div class="ettrow">
                 <label for="sell_value" class="column">Sell Value (0 if used):</label>
                 <input class="form-control column" step="0.01" type="number" id="sell_value" name="sell_value"
-                min="0" max="1" required>
+                       min="0" max="1" required>
             </div>
             <div class="ettrow">
                 <div class="column"></div>
-                <button type="submit" class="btn btn-success column">Sell/Use/Remove Items</button>
+                <button type="submit" class="btn btn-success column">Sell or Remove Items/Rares</button>
             </div>
             <br>
         </form>
@@ -309,7 +309,7 @@
                 <label for="r_unlocks" class="column">Rare Unlocks:</label>
                 <select class="form-control column" name="r_unlocks" id="r_unlocks" step="1">
                     {% for i in e[9] %}
-                        <option value="{{ i.name }}">{{ i.name }}</option>
+                    <option value="{{ i.name }}">{{ i.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -327,7 +327,7 @@
                 <label for="i_unlocks" class="column">Item Unlocks:</label>
                 <select class="form-control column" name="i_unlocks" id="i_unlocks" step="1">
                     {% for i in e[7] %}
-                        <option value="{{ i.name }}">{{ i.name }}</option>
+                    <option value="{{ i.name }}">{{ i.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -350,12 +350,12 @@
             <div class="ettrow">
                 <label for="unlock_level" class="column">Level:</label>
                 <input class="form-control column" step="1" type="number" id="unlock_level" name="unlock_level"
-                min="0" max="30" required>
+                       min="0" max="30" required>
             </div>
             <div class="ettrow">
                 <label for="unlock_cost" class="column">Cost:</label>
                 <input class="form-control column" step="0.01" type="number" id="unlock_cost" name="unlock_cost"
-                min="0" required>
+                       min="0" required>
             </div>
             <div class="ettrow">
                 <label for="unlock_rarity" class="column">Rarity:</label>
@@ -378,28 +378,28 @@
             <div class="ettrow">
                 <label for="e_gold" class="column">Expected Gold:</label>
                 <input class="form-control column" name="e_gold" id="e_gold" step="0.01"
-                    type="number" value="{{ c[15] }}" readonly>
+                       type="number" value="{{ c[15] }}" readonly>
             </div>
             <div class="ettrow">
                 <label for="level_2" class="column">Current Level:</label>
                 <input class="form-control column" step="1" type="number" id="level_2" name="level"
-                min="1" max="20" value="{{ e[0] }}" readonly>
+                       min="1" max="20" value="{{ e[0] }}" readonly>
             </div>
             <div class="ettrow">
                 <label for="XP" class="column">XP:</label>
                 <input class="form-control column" step="0.01" type="number" id="XP" name="XP"
-                min="0" value="{{ c[14] }}" required>
+                       min="0" value="{{ c[14] }}" required>
             </div>
             <div class="ettrow">
                 <label for="CS" class="column">Community Service:</label>
                 <input class="form-control column" step="0.01" type="number" id="CS" name="CS"
-                min="0" value="{{ c[11] }}" required>
+                       min="0" value="{{ c[11] }}" required>
             </div>
 
             <div class="ettrow">
                 <div class="column"></div>
                 <button type="submit" class="btn btn-warning column">Update XP & CS</button>
-                </div>
+            </div>
             <br>
         </form>
         <form class="danger" action="/api/edit_character_modify_gold" method="POST">
@@ -419,4 +419,18 @@
 
     </div>
 </div>
+<br>
+<br>
+<form class="danger" action="/api/edit_character_delete" method="POST"
+      onsubmit="return confirm('Are you sure you want to delete this character? THIS CANNOT BE REVERTED.');">
+    <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+    <input type="hidden" name="Name" value="{{ c[1] }}">
+    <input type="hidden" name="danger" value="X">
+    <div class="ettrow">
+        <div class="column"></div>
+        <button type="submit" class="btn btn-danger column">Delete Character</button>
+    </div>
+    <br>
+</form>
+
 {% endblock %}

@@ -59,6 +59,19 @@ def view_player():
     return render_template("view_player.html", user=current_user, p=player, e=extra)
 
 
+@views.route('/edit_player', methods=['POST', 'GET'])
+@login_required
+def edit_player():
+    # Do not handle get requests at all.
+    if request.method == 'GET':
+        return redirect("/players")
+    danger = bool(request.form.get("danger"))
+    player = database.get_player(request.form.get("PlayerName"))
+    chars = database.string_list_to_list(player[PLAYERS.Characters])
+    karma = ett.string_to_pf2e_element_list(player[PLAYERS.Upgrades])
+    return render_template("edit_player.html", user=current_user, p=player, chars=chars, karma=karma, danger=danger)
+
+
 @views.route('/characters')
 def characters():
     ch = database.get_table("Characters", ["PlayerName", "Name"], 0, 15)
@@ -71,6 +84,28 @@ def view_character():
     # Do not handle get requests at all.
     if request.method == 'GET':
         return redirect("/characters")
+    character = database.get_character(request.form.get("PlayerName"), request.form.get("Name"))
+    player = database.get_player(request.form.get("PlayerName"))
+    karma = player[PLAYERS.Karma]
+    total_rares = 1
+    rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
+    unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
+    inventory = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
+    for i in rewards:
+        if i.name == "Skeleton Key":
+            total_rares += i.quantity
+    rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
+    extra = (ett.get_level(CHARACTERS.XP), rare_unlocks, len(rare_unlocks),
+             total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
+    fvtts = database.string_list_to_list(character[CHARACTERS.FVTTs])
+    if len(fvtts) != 20:
+        fvtts = 20 * ['']
+    pdfs = database.string_list_to_list(character[CHARACTERS.PDFs])
+    if len(pdfs) != 20:
+        pdfs = 20 * ['']
+
+    return render_template("view_character.html", user=current_user, c=character, e=extra,
+                           p=pdfs, f=fvtts)
 
 
 @views.route('/edit_character', methods=['POST', 'GET'])
@@ -147,7 +182,6 @@ def add_adventure():
 @login_required
 def add_adventure_post():
     print(request.form)
-    data = request.form
     items = []
     items_name = request.form.getlist('items[][name]')
     items_level = request.form.getlist('items[][level]')
@@ -188,7 +222,7 @@ def add_adventure_post():
     game_name = request.form.get('gameName')
     game_length = float(request.form.get('time'))
     game_date = request.form.get('date')
-    game_continuation = (request.form.get('continuation') is not None)
+    game_continuation = (request.form.get('cont') is not None)
     game_comments = request.form.get('comments')
 
     err = database.add_game(game_name, game_date, game_length, items,
@@ -197,3 +231,17 @@ def add_adventure_post():
         flash("API ERROR: " + err, "error")
 
     return redirect('/adventures')
+
+
+@views.route('/edit_adventure', methods=['POST', 'GET'])
+@login_required
+def edit_adventure():
+    # Do not handle get requests at all.
+    if request.method == 'GET':
+        return redirect("/adventures")
+    pl = database.get_table("Players", "PlayerName")
+    danger = bool(request.form.get("danger"))
+    name = request.form.get("Name")
+    date = request.form.get("date")
+    adventure = database.get_game(name, date)
+    return render_template("edit_adventure.html", user=current_user, players=pl, a=adventure, danger=danger)

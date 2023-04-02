@@ -169,11 +169,11 @@ def get_offset_limit_query(order_by, offset: int = 0, limit: int = 0):
             append += ',' + order_by[i]
         qry += f' ORDER BY {append}'
 
-    if offset != 0:
-        qry += f' OFFSET {offset}'
-
     if limit != 0:
         qry += f' LIMIT {limit}'
+
+    if offset != 0:
+        qry += f' OFFSET {offset}'
 
     return qry
 
@@ -348,6 +348,12 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
         (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, ?, ?, '', '', '', ?, ?)""",
              (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp,
               gold, gold, ironman, enterer))
+
+
+def get_game(name, date):
+    return sql_exec("""
+        SELECT * FROM games WHERE Name = ? AND Date = ?
+    """, (name, date), Fetch.ONE)
 
 
 def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[ett.EttGamePlayer],
@@ -582,6 +588,26 @@ def edit_character(character: list):
         Rares = ?, Ironman = ?, Enterer = ? WHERE PlayerName = ? and Name = ?
     """, tuple(character))
 
+
+def edit_game(game: list):
+    if len(game) != len(GAMES):
+        print("INVALID GAME: ", game)
+        return "INVALID GAME: " + str(game)
+
+    cur_game = list(get_row("games", "ID", game[GAMES.ID]))
+
+    for i in range(len(game)):
+        if game[i] is None or i < 1:
+            game[i] = cur_game[i]
+
+    # move ID to the end so that it works
+    game = game[1:] + game[:1]
+    # Final character Data to write:
+    sql_exec("""UPDATE games set Name = ?, Date = ?, Enterer = ?, Time = ?,
+    GameLevel = ?, Items = ?, GM = ? WHERE ID = ?
+    """, tuple(game))
+
+
 # TODO: Generate all items, gold, unlocked items, xp, etc, on a character, from just their
 # audit history. By going through the audit history ordered by timestamp for a character
 # and applying it to that character.
@@ -674,7 +700,7 @@ def change_player_name(old_name: str, new_name: str):
         UPDATE events SET PlayerName = ? WHERE PlayerName = ?
     """, (new_name, old_name))
     sql_exec("""
-        UPDATE characters SET Name = ? WHERE PlayerName = ? and Name = ?
+        UPDATE characters SET Name = ? WHERE PlayerName = ?
     """, (new_name, old_name))
     sql_exec("""
         UPDATE games SET GM = ? WHERE GM = ?
@@ -682,3 +708,60 @@ def change_player_name(old_name: str, new_name: str):
     sql_exec("""
         UPDATE players SET PlayerName = ? WHERE PlayerName = ?
     """, (new_name, old_name))
+
+
+def delete_character(player_name: str, char_name: str):
+    pl = get_player(player_name)
+    if pl is not None:
+        pl = list(pl)
+        c = string_list_to_list(pl[PLAYERS.Characters])
+        new_list = []
+        for i in c:
+            if i != char_name:
+                new_list += [i]
+        pl[PLAYERS.Characters] = list_to_string(c)
+        edit_player(pl)
+    sql_exec("""
+        DELETE FROM characters WHERE PlayerName = ? AND Name = ?
+    """, (player_name, char_name))
+    sql_exec("""
+        DELETE FROM events WHERE PlayerName = ? AND CharacterName = ?
+        """, (player_name, char_name))
+
+
+def delete_player(player_name: str):
+    sql_exec("""
+        DELETE FROM players WHERE PlayerName = ?
+    """, (player_name, ))
+    sql_exec("""
+        DELETE FROM characters WHERE PlayerName = ?
+    """, (player_name, ))
+    sql_exec("""
+        DELETE FROM events WHERE PlayerName = ?
+    """, (player_name, ))
+
+
+def delete_game(game_id: str):
+    sql_exec("""
+        DELETE FROM games WHERE ID = ?
+    """, (game_id, ))
+    events = sql_exec("""
+        SELECT * FROM events WHERE RelatedID = ?
+    """, (game_id, ), Fetch.ALL)
+    for e in events:
+        e_list = list(e)
+        char = get_character(e_list[EVENTS.PlayerName], e_list[EVENTS.CharacterName])
+        if char is None:
+            continue
+        c_list = list(char)
+        games = string_list_to_list(c_list[CHARACTERS.Games])
+        new_games = []
+        for i in games:
+            if i != game_id:
+                new_games += [i]
+        c_list[CHARACTERS.Games] = list_to_string(new_games)
+        edit_character(c_list)
+
+    sql_exec("""
+        DELETE FROM events WHERE RelatedID = ?
+    """, (game_id, ))

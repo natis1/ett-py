@@ -115,7 +115,6 @@ function addPlayers(characters) {
     if (number > 8) {
         number = 8;
     }
-    var default_level = document.getElementById("level").value;
     var default_time = document.getElementById("time").value;
     var container = document.getElementById("player-container");
     while (container.hasChildNodes()) {
@@ -160,7 +159,6 @@ function addPlayers(characters) {
         level.max = "20";
         level.name = "players[][level]";
         level.id = "players[][level]";
-        level.value = default_level;
         level.classList.add('form-control');
         level.classList.add('column');
         row2.appendChild(level_label);
