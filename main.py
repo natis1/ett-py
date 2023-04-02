@@ -5,6 +5,7 @@
 import src
 import website
 import os
+import sys
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 
@@ -12,6 +13,9 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 if __name__ == '__main__':
     src.database.init_db()
     app = website.create_app()
-    app.run(debug=True)
+    if len(sys.argv) > 1:
+        app.run(debug=False, port=int(sys.argv[1]))
+    else:
+        app.run(debug=True)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
