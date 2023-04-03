@@ -11,7 +11,6 @@
         <th scope="col">Run By</th>
         <th scope="col">Length (H)</th>
         <th scope="col">Level</th>
-        <th width="5%" scope="col"></th>
         {% if user.is_authenticated %}
         <th width="5%" scope="col"></th>
         {% endif %}
@@ -37,8 +36,7 @@
           {data: 'Date'},
           {data: 'GM'},
           {data: 'Time'},
-          {data: 'GameLevel'},
-          {defaultContent: '<button id="view" class="btn btn-primary">View</button>', orderable: false}
+          {data: 'GameLevel'}
           {% if user.is_authenticated %},
           {defaultContent: '<button id="edit" type="submit" class="btn btn-danger">Edit</button>', orderable: false}
           {% endif %}
