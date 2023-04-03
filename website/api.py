@@ -406,7 +406,7 @@ def edit_character_karmabuy():
     if not valid_buy_items:
         return api_error()
     player = get_player()
-    if not pl:
+    if not player:
         return api_error()
     cur_char = get_character()
     if not cur_char:
