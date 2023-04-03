@@ -8,7 +8,7 @@
 {% block title %}Add Adventure{% endblock %}
 {% block content %}
 
-<form method="POST" onsubmit="return confirm('Please ensure all adventure stats are correct! There is no automated way to fix broken adventures.');">
+<form id="form" action="/add_adventure_submit" method="POST" onsubmit="return confirm('Please ensure all adventure stats are correct! There is no automated way to fix broken adventures.');">
   <div class="form-group container" style="max-width:600px;">
     <h1>Add Adventure</h1>
 
@@ -71,13 +71,27 @@
        onclick="addPlayers({{ characters }})">Generate Players</a>
     </div>
 
+    <br>
     <div id="player-container"></div>
+    <div class="ettrow">
+      <div class="column"></div>
+      <button id="submit_fake" type="button" onclick="return DryRun();" class="btn btn-success column">Dry Run</button>
+      </div>
+  <br>
+    <!-- Populated by JS to contain the results of the dry run -->
+    <div id="dryresults">
 
+    </div>
 
+  <br>
+  <div class="ettrow">
+    <div class="column">
+      <label><input name="submitonly" id="submitonly" type="checkbox" value="X" >Disable Automation</label>
+      </div>
+    <button id="submit_real" type="submit" class="btn btn-primary column">Submit Adventure</button>
   </div>
-  <div align="center">
-    <button type="submit" class="btn btn-primary">Submit Adventure</button>
   </div>
+
 </form>
 
 {% endblock %}

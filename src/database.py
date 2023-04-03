@@ -1,4 +1,4 @@
-import math
+import dataclasses
 import queue
 import sqlite3
 import threading
@@ -306,17 +306,6 @@ def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0,
     """, (name, starting_karma, starting_xp, enterer, discord))
 
 
-def add_xp_to_player(name, xp: float):
-    existing_xp = get_code("players", "BonusXP", "PlayerName", name)
-    if existing_xp is None:
-        print("Player does not exist " + name)
-        return False
-    new_xp = existing_xp + xp
-    sql_exec("""
-            UPDATE players SET BonusXP = ? where PlayerName = ?
-    """, (new_xp, name))
-
-
 def add_karma_to_player(name, karma: int):
     existing_karma = get_code("players", "Karma", "PlayerName", name)
     if existing_karma is None:
@@ -372,33 +361,55 @@ def get_game(name, date):
     """, (name, date), Fetch.ONE)
 
 
+@dataclasses.dataclass
+class GameChanges:
+    player_name: str
+    name: str = ''
+    items: list[ett.Pf2eElement] = None
+    xp_change: float = 0
+    karma_change: int = 0
+    cs_change: float = 0
+
+
 def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[ett.EttGamePlayer],
-             continuation, comments, enterer):
+             continuation, comments, enterer, dry_run: int):
     existing_games = sql_exec("""
         SELECT * FROM Games WHERE Name = ? and Date = ?
     """, (name, date), Fetch.ONE)
     if existing_games:
         print("This game is already logged in our DB. Exiting. ")
+        return "This game is already logged in our DB. Exiting."
     comments = "GAME PLAYED: " + comments
     game_level = ett.ett_party_level(players)
     items_text = ett.pf2e_element_list_to_string(items)
     timestamp = time.time()
     game_id = str(uuid.uuid4())
+    changes = []
     for pl in players:
         # GM player
         if pl.player_level == 0:
-            add_xp_to_player(pl.player_name, pl.time_played * 1.5)
-            sql_exec("""
-                        INSERT INTO games VALUES
-                        (?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (game_id, name, date, enterer, game_time, game_level, items_text, pl.player_name))
-
-            sql_exec("""
+            xp = pl.time_played * 1.5
+            karma = pl.gained_karma
+            if dry_run == 0:
+                gm = get_player(pl.player_name)
+                if gm:
+                    gm[PLAYERS.BonusXP] = gm[PLAYERS.BonusXP] + xp
+                    gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + karma
+                    edit_player(gm)
+            if dry_run == 0 or dry_run == 2:
+                sql_exec("""
+                         INSERT INTO games VALUES
+                         (?, ?, ?, ?, ?, ?, ?, ?)
+                         """, (game_id, name, date, enterer, game_time, game_level, items_text, pl.player_name))
+                sql_exec("""
                             INSERT INTO events VALUES
                             (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', 0, ?)
                         """, (
-                str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5,
-                pl.gained_karma, 0, items_text, comments))
+                        str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5,
+                        pl.gained_karma, 0, items_text, comments))
+            else:
+                changes += [GameChanges(pl.player_name, 'GM', None, xp, karma)]
+
         else:
             character = get_character(pl.player_name, pl.name)
             # This means the PC is invalid
@@ -455,13 +466,19 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
 
             character[CHARACTERS.CommunityService] = cs_remaining
             character[CHARACTERS.XP] = total_xp
-            sql_exec("""
-                INSERT INTO events VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?, ?)
-            """, (str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, xp_added, net_karma,
-                  adventure_gold, items_text, cs_change, comments))
-            add_karma_to_player(pl.name, net_karma)
-            edit_character(character)
+            if dry_run == 0 or dry_run == 2:
+                sql_exec("""
+                    INSERT INTO events VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?, ?)
+                    """, (str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, xp_added, net_karma,
+                    adventure_gold, items_text, cs_change, comments))
+            else:
+                changes += [GameChanges(pl.player_name, pl.name, items, xp_added, net_karma, cs_change)]
+            if dry_run == 0:
+                add_karma_to_player(pl.name, net_karma)
+                edit_character(character)
+    if dry_run == 1:
+        return changes
 
 
 def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_factor: float = 1.0):

@@ -147,6 +147,7 @@ function addPlayers(characters) {
 
         var row2 = document.createElement("div");
         row2.classList.add("ettrow");
+        row2.classList.add("required");
         var level_label = document.createElement("label");
         level_label.htmlFor = "players[][level]";
         level_label.innerHTML = "Level: ";
@@ -228,10 +229,39 @@ function addPlayers(characters) {
         row5.appendChild(died_label);
         row5.appendChild(did_die);
         container.appendChild(row5);
-
-
-
     }
+}
 
+async function DryRun() {
+    var form = new FormData(document.getElementById("form"));
+    console.log(form);
+    const response = await fetch('/add_adventure', {
+        "method": "POST",
+        "body": form
+    });
+    const jsonData = await response.json();
+    output = document.getElementById("dryresults");
+    while (output.hasChildNodes()) {
+        output.removeChild(output.lastChild);
+    }
+    for (i=0; i < jsonData.length; i++) {
+        var cur = jsonData[i];
+        console.log(cur);
+        var label = document.createElement("label");
+        // You are the GM
+        if (cur.name == "GM" && form.gm == cur.player_name) {
+            label.innerHTML = "GM (" + form.gm + ") will gain: " + cur.xp_change.toFixed(2) + " XP" + " and " + cur.karma_change + " karma.";
+        } else {
+            label.innerHTML = "Player: " + cur.player_name + " will gain " + cur.karma_change + " karma and PC: " + cur.name + " will gain: " +
+                              cur.xp_change.toFixed(2) + " XP. Community service hours changes by: " + cur.cs_change + ". Listed items will be unlocked: ";
+            if (!!cur.items){
+                for (const j of cur.items) {
+                    label.innerHTML += j.name + ", ";
+                }
+            }
+        }
+        output.appendChild(label);
+    }
+    console.log(jsonData);
 
 }

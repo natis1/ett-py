@@ -97,7 +97,7 @@ def view_character():
         if i.name == "Skeleton Key":
             total_rares += i.quantity
     rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
-    extra = (ett.get_level(CHARACTERS.XP), rare_unlocks, len(rare_unlocks),
+    extra = (ett.get_level(character[CHARACTERS.XP]), rare_unlocks, len(rare_unlocks),
              total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
     fvtts = database.string_list_to_list(character[CHARACTERS.FVTTs])
     if len(fvtts) != 20:
@@ -131,7 +131,7 @@ def edit_character():
         if i.name == "Skeleton Key":
             total_rares += i.quantity
     rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
-    extra = (ett.get_level(CHARACTERS.XP), rare_unlocks, len(rare_unlocks),
+    extra = (ett.get_level(character[CHARACTERS.XP]), rare_unlocks, len(rare_unlocks),
              total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
 
     return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra, danger=danger)
@@ -187,6 +187,7 @@ def add_adventure():
 
 
 @views.route('/add_adventure', methods=['POST'])
+@views.route('/add_adventure_submit', methods=['POST'], endpoint='add_adventure_submit')
 @login_required
 def add_adventure_post():
     print(request.form)
@@ -232,13 +233,21 @@ def add_adventure_post():
     game_date = request.form.get('date')
     game_continuation = (request.form.get('cont') is not None)
     game_comments = request.form.get('comments')
+    if bool(request.form.get('submitonly')):
+        submit_only = 2
+    else:
+        submit_only = 0
 
-    err = database.add_game(game_name, game_date, game_length, items,
-                            player_list, game_continuation, game_comments, current_user.name)
-    if err is not None:
-        flash("API ERROR: " + err, "error")
+    if request.endpoint == 'views.add_adventure_submit':
+        err = database.add_game(game_name, game_date, game_length, items,
+                                player_list, game_continuation, game_comments, current_user.name, submit_only)
+        if err is not None:
+            flash("API ERROR: " + err, "error")
 
-    return redirect('/adventures')
+        return redirect('/adventures')
+    else:
+        return database.add_game(game_name, game_date, game_length, items,
+                                 player_list, game_continuation, game_comments, current_user.name, 1)
 
 
 @views.route('/edit_adventure', methods=['POST', 'GET'])
