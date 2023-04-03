@@ -152,9 +152,11 @@ def add_character_post():
         xp = 0
     else:
         xp = float(xp)
-    database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
+    err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
                            data.get("background"), data.get("class"), data.get("heritage"),
                            data.get("pathbuilder"), int(data.get("ironman")), data.get("home"), xp)
+    if err:
+        flash("ERROR ADDING CHARACTER: " + err, "error")
     return redirect('/characters')
 
 

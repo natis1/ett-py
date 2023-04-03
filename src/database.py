@@ -332,7 +332,7 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
         print("PC already exists with name " + name + " on player: " + player_name)
         return "PC already exists with name " + name + " on player: " + player_name
 
-    if ett.get_available_slots(p[PLAYERS.Upgrades], p[PLAYERS.Characters]) <= 0:
+    if ett.get_available_slots(p[PLAYERS.Upgrades], string_list_to_list(p[PLAYERS.Characters])) <= 0:
         print("Not enough character slots for PC " + name + " on player: " + player_name)
         return "Not enough character slots for PC " + name + " on player: " + player_name
 
