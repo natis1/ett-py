@@ -418,6 +418,14 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                       " and name: " + pl.name + " does not exist!")
                 continue
             character = list(character)
+            if dry_run == 2 or dry_run == 0:
+                # Add game to player games list. Ensure this transaction commits before even any others.
+                # It should always transact to avoid needing to reindex later.
+                games = string_list_to_list(character[CHARACTERS.Games])
+                games += [game_id]
+                character[CHARACTERS.Games] = list_to_string(games)
+                edit_character(character)
+
             expected_level = ett.get_level(character[CHARACTERS.XP])
             tt_up = (expected_level < pl.player_level) and (not continuation)
             net_karma = pl.gained_karma - tt_up
@@ -456,12 +464,6 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
             if not pl.alive:
                 cs_remaining = ett.ett_died_cs(pl, ett.get_level(total_xp), character[CHARACTERS.Ironman])
                 cs_change += cs_remaining
-
-            # Add game to player games list
-            games = string_list_to_list(character[CHARACTERS.Games])
-            games += [game_id]
-            character[CHARACTERS.Games] = list_to_string(games)
-
             # Update the player with the new game information
 
             character[CHARACTERS.CommunityService] = cs_remaining
@@ -717,8 +719,8 @@ def move_character(cur_character: list, new_player_name: str):
     # Remove character from old player list
     new_pc_list = []
     for i in player_char_list:
-        if player_char_list != cur_character[CHARACTERS.Name]:
-            new_pc_list += i
+        if i != cur_character[CHARACTERS.Name]:
+            new_pc_list += [i]
 
     cur_player[PLAYERS.Characters] = list_to_string(new_pc_list)
 
