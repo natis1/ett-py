@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Edit Character{% endblock %}
+{% block title %}View Player{% endblock %}
 {% block javascript %}
 {% endblock %}
 {% block content %}
@@ -10,6 +10,9 @@
     <div class="column">{{ p[1] }}</div>
 </div>
 
+{% if p[6] %}
+<button type='button' class="btn btn-success" onclick="window.open('{{ p[6] }}')">Player Intro</button>
+{% endif %}
 <div class="ettrow">
     <div class="column">Characters Used: </div>
     <div class="column">{{ e[2] }} / {{ e[3] }}</div>

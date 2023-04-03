@@ -172,6 +172,22 @@ def edit_player_karmaadd():
     return redirect("/edit_player", code=307)
 
 
+@api.route('/edit_player_url', methods=['POST'])
+@login_required
+def edit_player_url():
+    intro = request.form.get("intro")
+    if intro is None:
+        return api_error()
+    pl = get_player()
+    if not pl:
+        return api_error()
+    pl[PLAYERS.DiscordIntro] = intro
+    err = database.edit_player(pl)
+    if err:
+        flash("ERROR: " + err, "error")
+    return redirect("/edit_player", code=307)
+
+
 @api.route('/edit_player_karmadel', methods=['POST'])
 @login_required
 def edit_player_karmadel():
@@ -274,6 +290,7 @@ def edit_character_core():
     background = request.form.get("background", type=str)
     pc_class = request.form.get("class", type=str)
     home = request.form.get("home", type=str)
+    subclass = request.form.get("subclass", type=str)
     ironman = request.form.get("ironman", type=int)
     comments = request.form.get("comments", type=str)
     if (not ancestry or not heritage or not background or not pc_class
@@ -290,6 +307,7 @@ def edit_character_core():
     cur_char[CHARACTERS.Home] = home
     cur_char[CHARACTERS.Ironman] = ironman
     cur_char[CHARACTERS.Comments] = comments
+    cur_char[CHARACTERS.Subclass] = subclass
 
     err = database.edit_character(cur_char)
     if err:
@@ -361,12 +379,16 @@ def edit_character_fvtturl():
 @login_required
 def edit_character_pburl():
     url = request.form.get("url", type=str)
+    discord = request.form.get("discord", type=str)
+    picture = request.form.get("picture", type=str)
     if not url:
         return api_error()
     cur_char = get_character()
     if not cur_char:
         return api_error()
     cur_char[CHARACTERS.Pathbuilder] = url
+    cur_char[CHARACTERS.DiscordLink] = discord
+    cur_char[CHARACTERS.Picture] = picture
     err = database.edit_character(cur_char)
     if err:
         flash("ERROR: " + err, "error")

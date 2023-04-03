@@ -70,6 +70,11 @@
                        minlength="2" value="{{ c[4] }}" required>
             </div>
             <div class="ettrow">
+            <label for="subclass" class="column">Subclass:</label>
+            <input class="form-control column" name="subclass" id="subclass" maxlength="32"
+               minlength="2" value="{{ c[22] }}">
+            </div>
+            <div class="ettrow">
                 <label for="home" class="column">Home:</label>
                 <input class="form-control column" name="home" id="home" maxlength="32"
                        minlength="2" value="{{ c[8] }}" required>
@@ -142,8 +147,18 @@
                        type="url" value="{{ c[9] }}">
             </div>
             <div class="ettrow">
+                <label for="discord" class="small_column">Discord URL:</label>
+                <input class="form-control big_column" name="discord" id="discord"
+                       type="url" value="{{ c[23] }}">
+            </div>
+            <div class="ettrow">
+                <label for="picture" class="small_column">Picture URL:</label>
+                <input class="form-control big_column" name="picture" id="picture"
+                       type="url" value="{{ c[24] }}">
+            </div>
+            <div class="ettrow">
                 <div class="small_column"></div>
-                <button type="submit" class="btn btn-warning big_column">Update Pathbuilder URL</button>
+                <button type="submit" class="btn btn-warning big_column">Update URLs</button>
             </div>
             <br>
         </form>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Edit Character{% endblock %}
+{% block title %}Edit Player{% endblock %}
 {% block javascript %}
 <script type="text/javascript"
         src="{{ url_for('static', filename='edit.js') }}"></script>
@@ -97,6 +97,19 @@
         </div>
         <label>To add player level karma unlocks, please use edit character.</label>
 
+        <br>
+    </form>
+    <form action="/api/edit_player_url" method="POST">
+        <input type="hidden" name="PlayerName" value="{{ p[0] }}">
+        <input type="hidden" name="danger" value="X">
+        <div class="ettrow">
+            <label for="intro" class="column">Discord Intro URL:</label>
+            <input class="form-control column" type="url" name="intro" id="intro" value="{{ p[6] }}" required>
+        </div>
+        <div class="ettrow">
+            <div class="column"></div>
+            <button type="submit" class="btn btn-warning column">Update Intro URL:</button>
+        </div>
         <br>
     </form>
     <br>

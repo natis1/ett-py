@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Edit Character{% endblock %}
+{% block title %}View Character{% endblock %}
 {% block javascript %}
 <script type="text/javascript">
     var fvtts = {{ f|tojson }};
@@ -56,6 +56,10 @@
             <input class="form-control column" name="class" id="class" value="{{ c[4] }}" readonly>
         </div>
         <div class="ettrow">
+            <label for="subclass" class="column">Subclass:</label>
+            <input class="form-control column" name="subclass" id="subclass" value="{{ c[22] }}" readonly>
+        </div>
+        <div class="ettrow">
             <label for="home" class="column">Home:</label>
             <input class="form-control column" name="home" id="home" value="{{ c[8] }}" readonly>
         </div>
@@ -108,6 +112,10 @@
         </div>
 
         <a class="btn btn-primary" href="{{ c[9] }}" target="_blank">Pathbuilder / Wanderers Guide</a>
+        <br>
+        <a class="btn btn-primary" href="{{ c[23] }}" target="_blank">Discord Link</a>
+        <br>
+        <a class="btn btn-primary" href="{{ c[24] }}" target="_blank">Character Image</a>
 
     </div>
 

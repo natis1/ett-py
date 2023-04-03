@@ -23,6 +23,7 @@ class PLAYERS(IntEnum):
     BonusXP = 3
     Upgrades = 4
     Enterer = 5
+    DiscordIntro = 6
 
 
 class CHARACTERS(IntEnum):
@@ -48,6 +49,9 @@ class CHARACTERS(IntEnum):
     Rares = 19
     Ironman = 20
     Enterer = 21
+    Subclass = 22
+    DiscordLink = 23
+    Picture = 24
 
 
 class GAMES(IntEnum):
@@ -131,8 +135,8 @@ SAFE_CHARACTER_COLUMNS = ['PlayerName', 'Name', 'Ancestry', 'Background', 'Class
                           'CurrentGold', 'Ironman', 'Enterer',
                           'PlayerName desc', 'Name desc', 'Ancestry desc', 'Background desc', 'Class desc',
                           'Heritage desc', 'Unlocks desc', 'Rewards desc', 'Home desc', 'CommunityService desc',
-                          'XP desc', 'ExpectedGold desc', 'CurrentGold desc', 'Ironman desc', 'Enterer desc'
-                          ]
+                          'XP desc', 'ExpectedGold desc', 'CurrentGold desc', 'Ironman desc', 'Enterer desc',
+                          'Subclass', 'Subclass desc']
 SAFE_GAME_COLUMNS = ['ID', 'Name', 'Date', 'Enterer', 'Time', 'GameLevel', 'GM',
                      'ID desc', 'Name desc', 'Date desc', 'Enterer desc', 'Time desc', 'GameLevel desc', 'GM desc']
 
@@ -259,6 +263,8 @@ def get_games_table(order_by, offset: int = 0, limit: int = 0, search: str = "")
 
 
 def init_db():
+    user_version = sql_exec("PRAGMA user_version", (), Fetch.ONE)[0]
+    print("Setting up database, current version is ", user_version)
     sql_exec("CREATE TABLE IF NOT EXISTS players(PlayerName, Karma, Characters, BonusXP, Upgrades, Enterer, "
              "PRIMARY KEY(PlayerName))")
     # Unlocks = items unlocked by player to be purchased
@@ -273,6 +279,14 @@ def init_db():
              "Comment, PRIMARY KEY(ID))")
     sql_exec("CREATE TABLE IF NOT EXISTS historians(OathID, Email, Name, permissions, PRIMARY KEY(OathID))")
 
+    # V1, add subclass field
+    if user_version < 1:
+        sql_exec("ALTER TABLE characters ADD COLUMN Subclass")
+        sql_exec("ALTER TABLE characters ADD COLUMN DiscordLink")
+        sql_exec("ALTER TABLE characters ADD COLUMN Picture")
+        sql_exec("ALTER TABLE players ADD COLUMN DiscordIntro")
+        sql_exec("PRAGMA user_version = 1")
+
 
 def get_player(name):
     return sql_exec("""
@@ -280,7 +294,7 @@ def get_player(name):
     """, (name,), Fetch.ONE)
 
 
-def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0):
+def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0, discord: str = ''):
     if get_player(name) is not None:
         print("Player already exists " + name)
         return False
@@ -288,8 +302,8 @@ def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0)
     print("Adding Character " + name)
     sql_exec("""
         INSERT INTO players VALUES
-        (?, ?, '', ?, '', ?)
-    """, (name, starting_karma, starting_xp, enterer))
+        (?, ?, '', ?, '', ?, ?)
+    """, (name, starting_karma, starting_xp, enterer, discord))
 
 
 def add_xp_to_player(name, xp: float):
@@ -321,7 +335,9 @@ def get_character(player_name, name):
 
 
 def add_character(player_name, enterer, name, ancestry, background, pc_class, heritage, pathbuilder, ironman, home='',
-                  starting_xp: float = 0.0):
+                  starting_xp: float = 0.0, subclass: str = '', discord_link: str = '', picture: str = ''):
+    if subclass is None:
+        subclass = ''
     p = get_player(player_name)
     if p is None:
         print("Player does not exist " + player_name)
@@ -345,9 +361,9 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
 
     sql_exec("""
         INSERT INTO characters VALUES
-        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, ?, ?, '', '', '', ?, ?)""",
+        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, ?, ?, '', '', '', ?, ?, ?, ?, ?)""",
              (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp,
-              gold, gold, ironman, enterer))
+              gold, gold, ironman, enterer, subclass, discord_link, picture))
 
 
 def get_game(name, date):
@@ -413,6 +429,9 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
             xp_added = ett.ett_xp_rate(pl.player_level, game_level) * pl.time_played
             adventure_gold = ett.ett_gold_add_xp(character[CHARACTERS.XP], xp_added)
             total_xp = xp_added + character[CHARACTERS.XP]
+            # Add karma for reaching 2 or for gaining a level.
+            extra_karma = ett.ett_leveling_karma(character[CHARACTERS.XP], xp_added)
+            net_karma += extra_karma
             character[CHARACTERS.ExpectedGold] = adventure_gold + character[CHARACTERS.ExpectedGold]
             character[CHARACTERS.CurrentGold] = adventure_gold + character[CHARACTERS.CurrentGold]
 
@@ -562,7 +581,8 @@ def edit_player(player: list):
 
     # move playername to the end so that query works
     player = player[1:] + player[:1]
-    sql_exec("""UPDATE players SET Karma = ?, Characters = ?, BonusXP = ?, Upgrades = ?, Enterer = ?
+    sql_exec("""UPDATE players SET Karma = ?, Characters = ?,
+    BonusXP = ?, Upgrades = ?, Enterer = ?, DiscordIntro = ?
     WHERE PlayerName = ?
     """, tuple(player))
 
@@ -585,7 +605,8 @@ def edit_character(character: list):
     sql_exec("""UPDATE characters SET Ancestry = ?, Background = ?, Class = ?, Heritage = ?,
         Unlocks = ?, Rewards = ?, Home = ?, Pathbuilder = ?, Comments = ?, CommunityService = ?,
         PDFs = ?, FVTTs = ?, XP = ?, ExpectedGold = ?, CurrentGold = ?, Games = ?, Items = ?,
-        Rares = ?, Ironman = ?, Enterer = ? WHERE PlayerName = ? and Name = ?
+        Rares = ?, Ironman = ?, Enterer = ?, Subclass = ?, DiscordLink = ?, Picture = ?
+        WHERE PlayerName = ? and Name = ?
     """, tuple(character))
 
 

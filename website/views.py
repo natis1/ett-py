@@ -30,9 +30,11 @@ def add_player():
 def add_player_post():
     print(request.form)
     data = request.form
+    discord = data.get('discord')
     karma = data.get('karma')
     if karma == '':
-        karma = 0
+        # Per Ghost Yuki you start with 1 karma
+        karma = 1
     else:
         karma = int(karma)
     xp = data.get('xp')
@@ -40,7 +42,7 @@ def add_player_post():
         xp = 0
     else:
         xp = float(xp)
-    database.add_player(data.get('playerName'), current_user.name, karma, xp)
+    database.add_player(data.get('playerName'), current_user.name, karma, xp, discord)
     return redirect('/players')
 
 
@@ -153,8 +155,9 @@ def add_character_post():
     else:
         xp = float(xp)
     err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
-                           data.get("background"), data.get("class"), data.get("heritage"),
-                           data.get("pathbuilder"), int(data.get("ironman")), data.get("home"), xp)
+                                 data.get("background"), data.get("class"), data.get("heritage"),
+                                 data.get("pathbuilder"), int(data.get("ironman")), data.get("home"), xp,
+                                 data.get("subclass"), data.get("discord"), data.get("picture"))
     if err:
         flash("ERROR ADDING CHARACTER: " + err, "error")
     return redirect('/characters')

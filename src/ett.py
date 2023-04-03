@@ -24,6 +24,7 @@ class EttGamePlayer:
 STARTING_GOLD = 15.0
 XP_PER_LEVEL = 12
 STARTING_SLOTS = 5
+STARTING_KARMA = 1
 NEW_FACE_BASE_COST = 5
 NEW_FACE_COST_PER = 1
 # for karma - name = name, level = cost (sorry),
@@ -123,6 +124,11 @@ def ett_leveling_karma(current_xp, xp_to_add):
     # if you would become level 2 but are not currently level 2, you gain an extra 3 karma.
     if (current_xp + xp_to_add) >= XP_PER_LEVEL > current_xp:
         return 3
+    # If you gain another level but are not currently that level you gain an extra 1 karma.
+    cur_level = get_level(current_xp)
+    new_level = get_level(current_xp + xp_to_add)
+    if cur_level < new_level:
+        return 1
     return 0
 
 
