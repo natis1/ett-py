@@ -149,6 +149,9 @@ def add_character():
 def add_character_post():
     print(request.form)
     data = request.form
+    region = data.get('home')
+    if not region:
+        region = 'Tavern Region'
     xp = data.get('xp')
     if xp == '':
         xp = 0
@@ -156,7 +159,7 @@ def add_character_post():
         xp = float(xp)
     err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
                                  data.get("background"), data.get("class"), data.get("heritage"),
-                                 data.get("pathbuilder"), int(data.get("ironman")), data.get("home"), xp,
+                                 data.get("pathbuilder"), int(data.get("ironman")), region, xp,
                                  data.get("subclass"), data.get("discord"), data.get("picture"))
     if err:
         flash("ERROR ADDING CHARACTER: " + err, "error")
