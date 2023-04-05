@@ -393,6 +393,7 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
             if dry_run == 0:
                 gm = get_player(pl.player_name)
                 if gm:
+                    gm = list(gm)
                     gm[PLAYERS.BonusXP] = gm[PLAYERS.BonusXP] + xp
                     gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + karma
                     edit_player(gm)
