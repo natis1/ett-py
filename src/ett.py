@@ -66,7 +66,6 @@ def get_available_slots(upgrades: str, characters: list):
 
 
 def get_level(xp):
-    print(xp)
     lv = 1 + math.floor(xp / XP_PER_LEVEL)
     if lv > 20:
         lv = 20

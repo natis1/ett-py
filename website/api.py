@@ -63,14 +63,20 @@ def get_query_data():
 def characters():
     q = get_query_data()
     total, table = database.get_characters_table(q[0], q[1], q[2], q[3])
-    print(total, table)
+    total = total[0]
+    total -= 1
     out_table = []
     for data in table:
-        outdict = {'PlayerName': data[0], 'Name': data[1], 'Ancestry': data[2],
-                   'Class': data[4], 'XP': round(data[14], 2), 'CurrentGold': round(data[16], 2)}
-        out_table += [outdict]
+        if data[CHARACTERS.PlayerName] == '!Placeholder':
+            continue
 
-    print(out_table)
+        outdict = {'PlayerName': data[CHARACTERS.PlayerName], 'Name': data[CHARACTERS.Name],
+                   'Ancestry': data[CHARACTERS.Ancestry],
+                   'Class': data[CHARACTERS.Class],
+                   'XP': round(data[CHARACTERS.XP], 2), 'Level': ett.get_level(data[CHARACTERS.XP]),
+                   'CurrentGold': round(data[CHARACTERS.CurrentGold], 2),
+                   'ExpectedGold': round(data[CHARACTERS.ExpectedGold], 2)}
+        out_table += [outdict]
 
     return {
         'data': out_table,
@@ -84,10 +90,17 @@ def characters():
 def players():
     q = get_query_data()
     total, table = database.get_players_table(q[0], q[1], q[2], q[3])
-    print(total, table)
+    total = total[0]
+    total -= 1
     out_table = []
     for data in table:
-        out_dict = {'PlayerName': data[0], 'Karma': data[1]}
+        if data[CHARACTERS.PlayerName] == '!Placeholder':
+            continue
+
+        chars = len(database.string_list_to_list(data[PLAYERS.Characters]))
+        max_chars = ett.get_available_slots(data[PLAYERS.Upgrades], [])
+        out_dict = {'PlayerName': data[PLAYERS.PlayerName], 'Karma': data[PLAYERS.Karma],
+                    'Chars': str(chars) + " / " + str(max_chars)}
         out_table += [out_dict]
     return {
         'data': out_table,

@@ -84,9 +84,6 @@ def callback():
     # app, and now you've verified their email through Google!
     if userinfo_response.json().get("email_verified"):
         unique_id = userinfo_response.json()["sub"]
-        users_email = userinfo_response.json()["email"]
-        print(unique_id, users_email)
-        print(type(unique_id))
         user = User.get(unique_id)
         if user is None:
             flash("You are not an authorized historian. Your unique ID is: " + unique_id, 'error')

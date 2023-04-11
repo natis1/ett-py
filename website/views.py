@@ -15,7 +15,6 @@ def home():
 @views.route('/players')
 def players():
     pl = database.get_table("Players", "PlayerName", 0, 15)
-    print(pl)
     return render_template("players.html", user=current_user, players=pl)
 
 
@@ -28,7 +27,6 @@ def add_player():
 @views.route('/add_player', methods=['POST'])
 @login_required
 def add_player_post():
-    print(request.form)
     data = request.form
     discord = data.get('discord')
     karma = data.get('karma')
@@ -54,7 +52,6 @@ def view_player():
     player = database.get_player(request.form.get("PlayerName"))
     upgrades = ett.string_to_pf2e_element_list(player[PLAYERS.Upgrades])
     chars = database.string_list_to_list(player[PLAYERS.Characters])
-    print(chars)
     char_num = len(chars)
     max_chars = ett.get_available_slots(player[PLAYERS.Upgrades], [])
     extra = (upgrades, chars, char_num, max_chars)
@@ -77,7 +74,6 @@ def edit_player():
 @views.route('/characters')
 def characters():
     ch = database.get_table("Characters", ["PlayerName", "Name"], 0, 15)
-    print(ch)
     return render_template("characters.html", user=current_user, characters=ch)
 
 
@@ -122,7 +118,6 @@ def edit_character():
     danger = bool(request.form.get("danger"))
     karma = player[PLAYERS.Karma]
 
-    print(character)
     total_rares = 1
     rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
     unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
