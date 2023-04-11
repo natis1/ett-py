@@ -668,8 +668,8 @@ def list_to_string(elements: str):
     e_str = ""
     for element_index in range(len(elements)):
         e_str += elements[element_index]
-        if element_index < (len(elements) - 1):
-            e_str += "\n"
+        e_str += "\n"
+        # Since splitlines will always remove the last line if it's blank, you need to include an extra \n at the end.
     return e_str
 
 
