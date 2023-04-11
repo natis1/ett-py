@@ -115,6 +115,10 @@ def edit_character():
     pl = database.get_table("Players", "PlayerName")
     character = database.get_character(request.form.get("PlayerName"), request.form.get("Name"))
     player = database.get_player(request.form.get("PlayerName"))
+    if not player or not character:
+        flash("API ERROR editing player,character: "+ request.form.get("PlayerName")+ request.form.get("Name"), "error")
+        return redirect("/characters")
+    character = list(character)
     danger = bool(request.form.get("danger"))
     karma = player[PLAYERS.Karma]
 
