@@ -67,7 +67,7 @@ def characters():
     total -= 1
     out_table = []
     for data in table:
-        if data[CHARACTERS.PlayerName] == '!Placeholder':
+        if data[CHARACTERS.PlayerName] == '!Placeholder' and request.args.get('search[value]') != '!Placeholder':
             continue
 
         outdict = {'PlayerName': data[CHARACTERS.PlayerName], 'Name': data[CHARACTERS.Name],
@@ -94,7 +94,7 @@ def players():
     total -= 1
     out_table = []
     for data in table:
-        if data[CHARACTERS.PlayerName] == '!Placeholder':
+        if data[CHARACTERS.PlayerName] == '!Placeholder' and request.args.get('search[value]') != '!Placeholder':
             continue
 
         chars = len(database.string_list_to_list(data[PLAYERS.Characters]))
