@@ -103,7 +103,9 @@ def ett_gold_add_xp(current_xp, xp_to_add):
         # if less than 0, let's just set it to 0 by calculating the gold at 0.
         if net_xp < 0:
             net_xp = 0
-        return -ett_gold_add_xp(net_xp, current_xp)
+            return -ett_gold_add_xp(net_xp, current_xp)
+        # Otherwise we want the inverse of the amount of gold we would GAIN by adding it
+        return -ett_gold_add_xp(net_xp, -xp_to_add)
 
     while xp_to_add > 0:
         cur_level = get_level(current_xp) - 1
