@@ -122,6 +122,10 @@ def edit_character():
     rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
     unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
     inventory = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
+    # Round to fix html problems
+    character[CHARACTERS.ExpectedGold] = round(character[CHARACTERS.ExpectedGold], 2)
+    character[CHARACTERS.CurrentGold] = round(character[CHARACTERS.CurrentGold], 2)
+    character[CHARACTERS.XP] = round(character[CHARACTERS.XP], 2)
     for i in rewards:
         if i.name == "Skeleton Key":
             total_rares += i.quantity
