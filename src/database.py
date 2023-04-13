@@ -306,17 +306,6 @@ def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0,
     """, (name, starting_karma, starting_xp, enterer, discord))
 
 
-def add_karma_to_player(name, karma: int):
-    existing_karma = get_code("players", "Karma", "PlayerName", name)
-    if existing_karma is None:
-        print("Player does not exist " + name)
-        return False
-    new_karma = existing_karma + karma
-    sql_exec("""
-            UPDATE players SET Karma = ? where PlayerName = ?
-    """, (new_karma, name))
-
-
 def get_character(player_name, name):
     return sql_exec("""
         SELECT * FROM characters WHERE PlayerName = ? and Name = ?
@@ -389,13 +378,12 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
         # GM player
         if pl.player_level == 0:
             xp = pl.time_played * 1.5
-            karma = pl.gained_karma
             if dry_run == 0:
                 gm = get_player(pl.player_name)
                 if gm:
                     gm = list(gm)
                     gm[PLAYERS.BonusXP] = gm[PLAYERS.BonusXP] + xp
-                    gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + karma
+                    gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + 1
                     edit_player(gm)
             if dry_run == 0 or dry_run == 2:
                 sql_exec("""
@@ -409,16 +397,23 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                         str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5,
                         pl.gained_karma, 0, items_text, comments))
             else:
-                changes += [GameChanges(pl.player_name, 'GM', None, xp, karma)]
+                changes += [GameChanges(pl.player_name, 'GM', None, xp, 1)]
 
         else:
             character = get_character(pl.player_name, pl.name)
             # This means the PC is invalid
-            if character is None:
+            if not character:
                 print("ERROR: Character with player name: " + pl.player_name +
                       " and name: " + pl.name + " does not exist!")
                 continue
             character = list(character)
+
+            player = get_player(pl.player_name)
+            if not player:
+                print("ERROR: Player with name: " + pl.player_name + " does not exist!")
+                continue
+            player = list(player)
+
             if dry_run == 2 or dry_run == 0:
                 # Add game to player games list. Ensure this transaction commits before even any others.
                 # It should always transact to avoid needing to reindex later.
@@ -428,8 +423,7 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                 edit_character(character)
 
             expected_level = ett.get_level(character[CHARACTERS.XP])
-            tt_up = (expected_level < pl.player_level) and (not continuation)
-            net_karma = pl.gained_karma - tt_up
+            net_karma = pl.gained_karma
             if not character[CHARACTERS.ExpectedGold]:
                 character[CHARACTERS.ExpectedGold] = 0
             if not character[CHARACTERS.CurrentGold]:
@@ -478,7 +472,8 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
             else:
                 changes += [GameChanges(pl.player_name, pl.name, items, xp_added, net_karma, cs_change)]
             if dry_run == 0:
-                add_karma_to_player(pl.name, net_karma)
+                player[PLAYERS.Karma] = player[PLAYERS.Karma] + net_karma
+                edit_player(player)
                 edit_character(character)
     if dry_run == 1:
         return changes
