@@ -417,10 +417,14 @@
             </div>
             <br>
         </form>
-        <form class="danger" action="/api/edit_character_modify_gold" method="POST">
+        <form action="/api/edit_character_modify_gold" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
-            <input type="hidden" name="danger" value="X">
+            <div class="ettrow">
+                <label for="e_gold2" class="column">Expected Gold:</label>
+                <input class="form-control column" name="e_gold" id="e_gold2" step="0.01"
+                       type="number" value="{{ c[15] }}" readonly>
+            </div>
             <div class="ettrow">
                 <label for="gold" class="column">Current Gold:</label>
                 <input class="form-control column" id="gold" name="gold" step="0.01" value="{{ c[16] }}" type="number" required>

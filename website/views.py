@@ -1,15 +1,8 @@
-import math
-
 from flask import Blueprint, render_template, request, redirect, flash
 from flask_login import current_user, login_required
 from src import database, ett
-views = Blueprint('views', __name__)
 from src.database import CHARACTERS, PLAYERS
-
-
-@views.route('/')
-def home():
-    return render_template("home.html", user=current_user)
+views = Blueprint('views', __name__)
 
 
 @views.route('/players')
@@ -51,7 +44,7 @@ def view_player():
         return redirect("/players")
     player = database.get_player(request.form.get("PlayerName"))
     if not player:
-        flash("API ERROR viewing player: " + request.form.get("PlayerName"),"error")
+        flash("API ERROR viewing player: " + request.form.get("PlayerName"), "error")
         return redirect("/players")
     player = list(player)
     player[PLAYERS.BonusXP] = round(player[PLAYERS.BonusXP], 2)
@@ -88,6 +81,8 @@ def edit_player():
                            p=player, ch=formatted_ch, karma=karma, danger=danger)
 
 
+# This is the most important screen so it should take priority.
+@views.route('/')
 @views.route('/characters')
 def characters():
     ch = database.get_table("Characters", ["PlayerName", "Name"], 0, 15)

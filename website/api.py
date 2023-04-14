@@ -70,7 +70,7 @@ def characters():
                    'Class': data[CHARACTERS.Class],
                    'XP': round(data[CHARACTERS.XP], 2), 'Level': ett.get_level(data[CHARACTERS.XP]),
                    'CurrentGold': round(data[CHARACTERS.CurrentGold], 2),
-                   'ExpectedGold': round(data[CHARACTERS.ExpectedGold], 2)}
+                   'Subclass': data[CHARACTERS.Subclass]}
         out_table += [outdict]
 
     return {

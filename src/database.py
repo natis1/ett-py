@@ -235,11 +235,13 @@ def get_characters_table(order_by, offset: int = 0, limit: int = 0, search: str 
         else:
             s = '%' + search + '%'
             total = sql_exec("SELECT COUNT(*) FROM characters WHERE PlayerName != '!PLACEHOLDER' AND "
-                             "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? ",
-                             (s, s, s, s), Fetch.ONE)
+                             "PlayerName LIKE ? or Subclass LIKE ? or Name LIKE ? or Ancestry LIKE ? "
+                             "or Class LIKE ? ",
+                             (s, s, s, s, s), Fetch.ONE)
             page = sql_exec("SELECT * FROM characters WHERE PlayerName != '!PLACEHOLDER' AND "
-                            "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? " + qry,
-                            (s, s, s, s), Fetch.ALL)
+                            "PlayerName LIKE ? or Subclass LIKE ? or Name LIKE ? or Ancestry LIKE ? "
+                            "or Class LIKE ? " + qry,
+                            (s, s, s, s, s), Fetch.ALL)
         return count, total, page
     else:
         total = sql_exec("SELECT COUNT(*) FROM characters WHERE PlayerName != '!PLACEHOLDER'", None, Fetch.ONE)

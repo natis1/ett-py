@@ -18,20 +18,11 @@
                 <label for="show_danger">Show Adjustments: </label>
             </div>
             <div class="column">
-                <input id="show_danger" {% if danger %} checked {% endif %} name="show_danger" type="checkbox" onclick="showDanger();">
+                <input id="show_danger" checked name="show_danger" type="checkbox" onclick="showDanger();">
             </div>
         </div>
     </div>
     <br>
-
-    <form action="/api/edit_player_regenk" method="POST">
-        <input type="hidden" name="PlayerName" value="{{ p[0] }}">
-        <div class="ettrow">
-            <div class="column"><label>Recalculate Karma from Events table</label></div>
-            <button type="submit" class="btn btn-danger column">Regenerate Karma</button>
-        </div>
-        <br>
-    </form>
 
     <form action="/api/edit_player_xptransfer" method="POST">
         <input type="hidden" name="PlayerName" value="{{ p[0] }}">
