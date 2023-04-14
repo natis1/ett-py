@@ -116,6 +116,25 @@ def adventures():
     }
 
 
+@api.route('/edit_player_regenk', methods=['POST'])
+@login_required
+def edit_player_regenk():
+    pl = get_player()
+    if not pl:
+        return api_error()
+    pl = list(pl)
+    pl_events = database.sql_exec("SELECT * FROM events WHERE PlayerName = ?", (pl[PLAYERS.PlayerName], ), database.Fetch.ALL)
+    k = ett.STARTING_KARMA
+    for i in pl_events:
+        karma = i[database.EVENTS.KarmaAdjust]
+        if karma:
+            k += int(karma)
+    print("RECALCULATED PLAYER KARMA FOR PL: ", pl[PLAYERS.PlayerName], " FROM ", pl[PLAYERS.Karma], " TO ", k)
+    pl[PLAYERS.Karma] = k
+    database.edit_player(pl)
+    return redirect("/edit_player", code=307)
+
+
 @api.route('/edit_player_xptransfer', methods=['POST'])
 @login_required
 def edit_player_xptransfer():
