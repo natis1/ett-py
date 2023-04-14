@@ -50,6 +50,11 @@ def view_player():
     if request.method == 'GET':
         return redirect("/players")
     player = database.get_player(request.form.get("PlayerName"))
+    if not player:
+        flash("API ERROR viewing player: " + request.form.get("PlayerName"),"error")
+        return redirect("/players")
+    player = list(player)
+    player[PLAYERS.BonusXP] = round(player[PLAYERS.BonusXP], 2)
     upgrades = ett.string_to_pf2e_element_list(player[PLAYERS.Upgrades])
     chars = database.string_list_to_list(player[PLAYERS.Characters])
     char_num = len(chars)
@@ -64,11 +69,23 @@ def edit_player():
     # Do not handle get requests at all.
     if request.method == 'GET':
         return redirect("/players")
+    player = database.get_player(request.form.get("PlayerName"))
+    if not player:
+        flash("API ERROR viewing player: " + request.form.get("PlayerName"), "error")
+        return redirect("/players")
+    player = list(player)
+    player[PLAYERS.BonusXP] = round(player[PLAYERS.BonusXP], 2)
     danger = bool(request.form.get("danger"))
     player = database.get_player(request.form.get("PlayerName"))
-    chars = database.string_list_to_list(player[PLAYERS.Characters])
+    my_chars = database.string_list_to_list(player[PLAYERS.Characters])
     karma = ett.string_to_pf2e_element_list(player[PLAYERS.Upgrades])
-    return render_template("edit_player.html", user=current_user, p=player, chars=chars, karma=karma, danger=danger)
+    ch = database.get_table("Characters", ["PlayerName", "Name"])
+    formatted_ch = []
+    for i in ch:
+        tab = [i[0], i[1]]
+        formatted_ch.append(tab)
+    return render_template("edit_player.html", user=current_user, my_chars=my_chars,
+                           p=player, ch=formatted_ch, karma=karma, danger=danger)
 
 
 @views.route('/characters')
@@ -84,11 +101,19 @@ def view_character():
         return redirect("/characters")
     character = database.get_character(request.form.get("PlayerName"), request.form.get("Name"))
     player = database.get_player(request.form.get("PlayerName"))
+    if not player or not character:
+        flash("API ERROR viewing player,char: " + request.form.get("PlayerName") + request.form.get("Name"), "error")
+        return redirect("/characters")
+    character = list(character)
     karma = player[PLAYERS.Karma]
     total_rares = 1
     rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
     unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
     inventory = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
+    # Round to fix html problems
+    character[CHARACTERS.ExpectedGold] = round(character[CHARACTERS.ExpectedGold], 2)
+    character[CHARACTERS.CurrentGold] = round(character[CHARACTERS.CurrentGold], 2)
+    character[CHARACTERS.XP] = round(character[CHARACTERS.XP], 2)
     for i in rewards:
         if i.name == "Skeleton Key":
             total_rares += i.quantity
@@ -116,7 +141,7 @@ def edit_character():
     character = database.get_character(request.form.get("PlayerName"), request.form.get("Name"))
     player = database.get_player(request.form.get("PlayerName"))
     if not player or not character:
-        flash("API ERROR editing player,character: "+ request.form.get("PlayerName")+ request.form.get("Name"), "error")
+        flash("API ERROR editing player,char: " + request.form.get("PlayerName") + request.form.get("Name"), "error")
         return redirect("/characters")
     character = list(character)
     danger = bool(request.form.get("danger"))
@@ -184,9 +209,20 @@ def add_adventure():
     for i in ch:
         tab = [i[0], i[1]]
         formatted_ch.append(tab)
-    print(formatted_ch)
 
     return render_template("add_adventure.html", user=current_user, players=pl, characters=formatted_ch)
+
+
+def parse_button(button: list):
+    output_button = []
+    it = iter(range(len(button)))
+    for i in it:
+        if button[i]:
+            output_button += [1]
+            next(it)
+        else:
+            output_button += [0]
+    return output_button
 
 
 @views.route('/add_adventure', methods=['POST'])
@@ -197,7 +233,6 @@ def add_adventure_post():
     items = []
     items_name = request.form.getlist('items[][name]')
     items_level = request.form.getlist('items[][level]')
-    items_cost = request.form.getlist('items[][cost]')
     items_rarity = request.form.getlist('items[][rarity]')
     items_num = request.form.get('itemsNr')
     if not items_num:
@@ -207,34 +242,33 @@ def add_adventure_post():
 
     players_num = int(request.form.get('playersNr'))
     for i in range(0, items_num):
-        itm = ett.Pf2eElement(items_name[i], int(items_level[i]), float(items_cost[i]), int(items_rarity[i]))
+        itm = ett.Pf2eElement(items_name[i], int(items_level[i]), 0, int(items_rarity[i]))
         items += [itm]
 
     gm_player_name = request.form.get('gm')
     gm_game_time = float(request.form.get('time'))
-    gm_karma_gain = request.form.get('gmKarma')
-    if not gm_karma_gain:
-        gm_karma_gain = 0
-    else:
-        gm_karma_gain = int(gm_karma_gain)
 
-    player_list = [ett.EttGamePlayer(gm_player_name, '', 0, gm_game_time, gm_karma_gain, True)]
+    player_list = [ett.EttGamePlayer(gm_player_name, '', 0, gm_game_time, 0, True)]
     player_names = request.form.getlist('players[][name]')
     player_levels = request.form.getlist('players[][level]')
     player_times = request.form.getlist('players[][time]')
-    player_karma = request.form.getlist('players[][karma]')
-    player_died = request.form.getlist('players[][died]')
+    print("karma list is ", request.form.getlist('players[][karma]', int))
+    player_karma = parse_button(request.form.getlist('players[][karma]', int))
+    print("player karma is ", player_karma)
+    player_tt = parse_button(request.form.getlist('players[][ttcost]', int))
+    total_karma = [x - y for x, y in zip(player_karma, player_tt)]
+    player_died = parse_button(request.form.getlist('players[][died]', int))
+    print("Karma gained + died is ", total_karma, player_died)
     for i in range(0, players_num):
         pl_name = player_names[i]
         pl_name_split = pl_name.split("|", 1)
         pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], int(player_levels[i]),
-                               float(player_times[i]), int(player_karma[i]), player_died[i] != 'X')
+                               float(player_times[i]), int(total_karma[i]), not bool(player_died[i]))
         player_list += [pl]
 
     game_name = request.form.get('gameName')
     game_length = float(request.form.get('time'))
     game_date = request.form.get('date')
-    game_continuation = (request.form.get('cont') is not None)
     game_comments = request.form.get('comments')
     if bool(request.form.get('submitonly')):
         submit_only = 2
@@ -243,14 +277,14 @@ def add_adventure_post():
 
     if request.endpoint == 'views.add_adventure_submit':
         err = database.add_game(game_name, game_date, game_length, items,
-                                player_list, game_continuation, game_comments, current_user.name, submit_only)
+                                player_list, game_comments, current_user.name, submit_only)
         if err is not None:
             flash("API ERROR: " + err, "error")
 
         return redirect('/adventures')
     else:
         return database.add_game(game_name, game_date, game_length, items,
-                                 player_list, game_continuation, game_comments, current_user.name, 1)
+                                 player_list, game_comments, current_user.name, 1)
 
 
 @views.route('/edit_adventure', methods=['POST', 'GET'])

@@ -6,6 +6,11 @@
   margin-top: 5px;
 }
 
+.halfrow {
+display: flex;
+
+}
+
 .column {
   flex: 50%;
   line-height: 30px;
@@ -28,4 +33,8 @@
     color: #e32;
     content: ' *';
     display:inline;
+}
+
+.cb-danger {
+    accent-color: red;
 }

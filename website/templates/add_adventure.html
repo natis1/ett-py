@@ -8,7 +8,7 @@
 {% block title %}Add Adventure{% endblock %}
 {% block content %}
 
-<form id="form" action="/add_adventure_submit" method="POST" onsubmit="return confirm('Please ensure all adventure stats are correct! There is no automated way to fix broken adventures.');">
+<form id="form" action="/add_adventure_submit" method="POST" onsubmit="return confirm('Please ensure all adventure stats are correct! You will have to edit players manually to fix broken stats.');">
   <div class="form-group container" style="max-width:600px;">
     <h1>Add Adventure</h1>
 
@@ -20,12 +20,6 @@
       {% endfor %}
     </select>
     </div>
-
-    <div class="ettrow">
-    <label for="gmKarma" class="column">GM Karma:</label>
-    <input class="form-control column" step="1" type="number" id="gmKarma" name="gmKarma"
-           min="0" max="5" placeholder="0">
-      </div>
 
     <div class="ettrow required">
     <label for="gamename" class="column">Game Name:</label>
@@ -40,10 +34,6 @@
     <label for="time" class="column">Length (Hours):</label>
       <input class="form-control column" step="0.01" type="number" id="time" name="time"
            min="0" max="100" placeholder="4" required>
-      </div>
-    <div class="ettrow required">
-    <label for="cont" class="column">Continuation (No TT cost):</label>
-      <input class="column" type="checkbox" id="cont" name="cont" checked value="X">
       </div>
     <div class="ettrow">
     <label for="comments" class="small_column">Comments:</label>

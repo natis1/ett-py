@@ -62,14 +62,9 @@ def get_query_data():
 @api.route('/characters')
 def characters():
     q = get_query_data()
-    total, table = database.get_characters_table(q[0], q[1], q[2], q[3])
-    total = total[0]
-    total -= 1
+    count, total, table = database.get_characters_table(q[0], q[1], q[2], q[3])
     out_table = []
     for data in table:
-        if data[CHARACTERS.PlayerName] == '!Placeholder' and request.args.get('search[value]') != '!Placeholder':
-            continue
-
         outdict = {'PlayerName': data[CHARACTERS.PlayerName], 'Name': data[CHARACTERS.Name],
                    'Ancestry': data[CHARACTERS.Ancestry],
                    'Class': data[CHARACTERS.Class],
@@ -81,7 +76,7 @@ def characters():
     return {
         'data': out_table,
         'recordsFiltered': total,
-        'recordsTotal': total,
+        'recordsTotal': count,
         'draw': request.args.get('draw', type=int),
     }
 
@@ -89,14 +84,9 @@ def characters():
 @api.route('/players')
 def players():
     q = get_query_data()
-    total, table = database.get_players_table(q[0], q[1], q[2], q[3])
-    total = total[0]
-    total -= 1
+    count, total, table = database.get_players_table(q[0], q[1], q[2], q[3])
     out_table = []
     for data in table:
-        if data[CHARACTERS.PlayerName] == '!Placeholder' and request.args.get('search[value]') != '!Placeholder':
-            continue
-
         chars = len(database.string_list_to_list(data[PLAYERS.Characters]))
         max_chars = ett.get_available_slots(data[PLAYERS.Upgrades], [])
         out_dict = {'PlayerName': data[PLAYERS.PlayerName], 'Karma': data[PLAYERS.Karma],
@@ -105,14 +95,15 @@ def players():
     return {
         'data': out_table,
         'recordsFiltered': total,
-        'recordsTotal': total,
+        'recordsTotal': count,
         'draw': request.args.get('draw', type=int),
     }
+
 
 @api.route('/adventures')
 def adventures():
     q = get_query_data()
-    total, table = database.get_games_table(q[0], q[1], q[2], q[3])
+    count, total, table = database.get_games_table(q[0], q[1], q[2], q[3])
     out_table = []
     for data in table:
         out_dict = {'Name': data[1], 'Date': data[2], 'GM': data[7], 'Time': data[4], 'GameLevel': data[5]}
@@ -120,7 +111,7 @@ def adventures():
     return {
         'data': out_table,
         'recordsFiltered': total,
-        'recordsTotal': total,
+        'recordsTotal': count,
         'draw': request.args.get('draw', type=int),
     }
 
@@ -129,13 +120,14 @@ def adventures():
 @login_required
 def edit_player_xptransfer():
     xp_target = request.form.get("sendto", type=str)
+    xp_target_split = xp_target.split("|", 1)
     xp_sent = request.form.get("xpsend", type=float)
-    if not xp_target or not xp_sent:
+    if not xp_target or not xp_sent or (len(xp_target_split) != 2):
         return api_error()
     pl = get_player()
     if not pl:
         return api_error()
-    char = database.get_character(pl[PLAYERS.PlayerName], xp_target)
+    char = database.get_character(xp_target_split[0], xp_target_split[1])
     if char is None:
         return api_error()
     char = list(char)

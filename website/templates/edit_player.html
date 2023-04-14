@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Edit Player{% endblock %}
 {% block javascript %}
+<script type="text/javascript">
+    var chars = {{ ch|tojson }};
+</script>
 <script type="text/javascript"
         src="{{ url_for('static', filename='edit.js') }}"></script>
+<script type="text/javascript"
+        src="{{ url_for('static', filename='edit_player.js') }}"></script>
 {% endblock %}
 {% block content %}
 <div class="form-group container" style="max-width:600px;">
@@ -34,8 +39,8 @@
         <div class="ettrow">
             <label for="sendto" class="column">Send XP to:</label>
             <select class="form-control column" id="sendto" name="sendto">
-                {% for c in chars %}
-                <option>{{ c }}</option>
+                {% for c in my_chars %}
+                <option value="{{ p[0] }}|{{ c }}">{{ p[0] }} -> {{ c }}</option>
                 {% endfor %}
             </select>
         </div>

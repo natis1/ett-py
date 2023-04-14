@@ -14,6 +14,11 @@ if __name__ == '__main__':
     src.database.init_db()
     app = website.create_app()
     if len(sys.argv) > 1:
+        if sys.argv[1] == '-r':
+            print("RUNNING REINDEXING!")
+            src.database.reindex()
+            exit(0)
+
         app.wsgi_app = ProxyFix(
             app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
         )

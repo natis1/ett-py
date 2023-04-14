@@ -56,28 +56,6 @@ function addItems(){
         row2.appendChild(level);
         container.appendChild(row2);
 
-        var row3 = document.createElement("div");
-        row3.classList.add("ettrow");
-        row3.classList.add("required");
-        var cost_label = document.createElement("label");
-        cost_label.htmlFor = "items[][cost]";
-        cost_label.innerHTML = "Cost:";
-        cost_label.classList.add('column');
-        var cost = document.createElement("input");
-        cost.required = true;
-        cost.type = "number";
-        cost.step = "0.01";
-        cost.min = "0";
-        cost.max = "999999";
-        cost.name = "items[][cost]";
-        cost.id = "items[][cost]";
-        cost.placeholder = "0"
-        cost.classList.add('form-control');
-        cost.classList.add('column');
-        row3.appendChild(cost_label);
-        row3.appendChild(cost);
-        container.appendChild(row3);
-
         var row4 = document.createElement("div");
         row4.classList.add("ettrow");
         row4.classList.add("required");
@@ -189,46 +167,83 @@ function addPlayers(characters) {
 
         var row4 = document.createElement("div");
         row4.classList.add("ettrow");
+        var minirow3 = document.createElement("div");
+        minirow3.classList.add("column");
+        minirow3.classList.add("halfrow");
+        var minirow4 = document.createElement("div");
+        minirow4.classList.add("column");
         var karma_label = document.createElement("label");
         karma_label.htmlFor = "players[][karma]";
         karma_label.innerHTML = "Karma Gained: ";
         karma_label.classList.add('column');
+        // Hacky ass shit to let us use checkboxes here
+        var karma_hidden = document.createElement("input");
+        karma_hidden.type = "hidden";
+        karma_hidden.name = "players[][karma]";
+        karma_hidden.value = "0";
         var karma = document.createElement("input");
-        karma.required = true;
-        karma.type = "number";
-        karma.step = "1";
-        karma.min = "0";
-        karma.max = "5";
+        karma.type = "checkbox";
         karma.name = "players[][karma]";
         karma.id = "players[][karma]";
-        karma.value = 0;
+        karma.value = "1";
         karma.classList.add('form-control');
         karma.classList.add('column');
-        row4.appendChild(karma_label);
-        row4.appendChild(karma);
+        minirow3.appendChild(karma_label);
+        minirow3.appendChild(karma);
+        minirow3.appendChild(karma_hidden);
+        row4.appendChild(minirow3);
+        row4.appendChild(minirow4);
         container.appendChild(row4);
 
         var row5 = document.createElement("div");
-        row5.classList.add("ettrow")
-        var died_label = document.createElement("label")
-        died_label.htmlFor = "players[][died]";
-        died_label.innerHTML="Died";
-        var did_die = document.createElement("select");
-        var alive = document.createElement("option");
-        alive.innerHTML = "Alive";
-        alive.value = "";
-        var dead = document.createElement("option");
-        dead.innerHTML = "Dead";
-        dead.value = "X";
+        row5.classList.add("ettrow");
+        var minirow1 = document.createElement("div");
+        minirow1.classList.add("column");
+        minirow1.classList.add("halfrow");
+        tt_label = document.createElement("label");
+        tt_label.innerHTML = "TT Karma:";
+        tt_label.classList.add('column');
+        // Hacky ass shit to let us use checkboxes here
+        var tt_hidden = document.createElement("input");
+        tt_hidden.type = "hidden";
+        tt_hidden.name = "players[][ttcost]";
+        tt_hidden.value = "0";
+        var tt_cost = document.createElement("input");
+        tt_cost.type = "checkbox";
+        tt_cost.value="1";
+        tt_cost.classList.add('column');
+        tt_cost.name = "players[][ttcost]";
+        minirow1.appendChild(tt_label);
+        minirow1.appendChild(tt_cost);
+        minirow1.appendChild(tt_hidden);
+        var minirow2 = document.createElement("div");
+        minirow2.classList.add("column");
+        minirow2.classList.add("halfrow");
+        minirow2.classList.add("custom-checkbox");
+        die_label = document.createElement("label");
+        die_label.innerHTML = "Died:";
+        die_label.classList.add('column');
+        // Hacky ass shit to let us use checkboxes here
+        var die_hidden = document.createElement("input");
+        die_hidden.type = "hidden";
+        die_hidden.name = "players[][died]";
+        die_hidden.value = "0";
+        var did_die = document.createElement("input");
+        did_die.type = "checkbox";
+        did_die.value = "1";
         did_die.name = "players[][died]";
         did_die.id = "players[][died]";
-        did_die.classList.add('checkbox');
-        did_die.appendChild(alive);
-        did_die.appendChild(dead);
-        died_label.classList.add('column');
-        row5.appendChild(died_label);
-        row5.appendChild(did_die);
+        did_die.classList.add('column');
+
+        did_die.classList.add('cb-danger');
+        minirow2.appendChild(die_label);
+        minirow2.appendChild(did_die);
+        minirow2.appendChild(die_hidden);
+        row5.appendChild(minirow1);
+        row5.appendChild(minirow2);
         container.appendChild(row5);
+        var br = document.createElement("br");
+        container.appendChild(br);
     }
 }
 

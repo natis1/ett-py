@@ -200,13 +200,20 @@ def get_players_table(order_by, offset: int = 0, limit: int = 0, search: str = "
 
     qry = get_offset_limit_query(true_order, offset, limit)
     if search:
-        total = sql_exec("SELECT COUNT(*) FROM players WHERE PlayerName LIKE ?", ('%'+search+'%',), Fetch.ONE)
-        page = sql_exec("SELECT * FROM players WHERE PlayerName LIKE ? " + qry, ('%' + search + '%',), Fetch.ALL)
-        return total, page
+        count = sql_exec("SELECT COUNT(*) FROM players", None, Fetch.ONE)
+        if search == "!PLACEHOLDER":
+            total = 1
+            page = sql_exec("SELECT * FROM players WHERE PlayerName = '!PLACEHOLDER' " + qry, None, Fetch.ALL)
+        else:
+            total = sql_exec("SELECT COUNT(*) FROM players WHERE PlayerName != '!PLACEHOLDER' and PlayerName LIKE ?"
+                             , ('%'+search+'%',), Fetch.ONE)
+            page = sql_exec("SELECT * FROM players WHERE PlayerName != '!PLACEHOLDER' and PlayerName LIKE ? " + qry
+                            , ('%' + search + '%',), Fetch.ALL)
+        return count, total, page
     else:
-        total = sql_exec("SELECT COUNT(*) FROM players", None, Fetch.ONE)
-        page = sql_exec("SELECT * FROM players " + qry, None, Fetch.ALL)
-        return total, page
+        total = sql_exec("SELECT COUNT(*) FROM players WHERE PlayerName != '!PLACEHOLDER'", None, Fetch.ONE)
+        page = sql_exec("SELECT * FROM players WHERE PlayerName != '!PLACEHOLDER'" + qry, None, Fetch.ALL)
+        return total, total, page
 
 
 def get_characters_table(order_by, offset: int = 0, limit: int = 0, search: str = ""):
@@ -221,18 +228,23 @@ def get_characters_table(order_by, offset: int = 0, limit: int = 0, search: str 
 
     qry = get_offset_limit_query(true_order, offset, limit)
     if search:
-        s = '%' + search + '%'
-        total = sql_exec("SELECT COUNT(*) FROM characters WHERE "
-                         "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? ",
-                         (s, s, s, s), Fetch.ONE)
-        page = sql_exec("SELECT * FROM characters WHERE "
-                        "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? " + qry,
-                        (s, s, s, s), Fetch.ALL)
-        return total, page
+        count = sql_exec("SELECT COUNT(*) FROM characters", None, Fetch.ONE)
+        if search == "!PLACEHOLDER":
+            total = 1
+            page = sql_exec("SELECT * FROM characters WHERE PlayerName = '!PLACEHOLDER'", None, Fetch.ALL)
+        else:
+            s = '%' + search + '%'
+            total = sql_exec("SELECT COUNT(*) FROM characters WHERE PlayerName != '!PLACEHOLDER' AND "
+                             "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? ",
+                             (s, s, s, s), Fetch.ONE)
+            page = sql_exec("SELECT * FROM characters WHERE PlayerName != '!PLACEHOLDER' AND "
+                            "PlayerName LIKE ? or Name LIKE ? or Ancestry LIKE ? or Class LIKE ? " + qry,
+                            (s, s, s, s), Fetch.ALL)
+        return count, total, page
     else:
-        total = sql_exec("SELECT COUNT(*) FROM characters ", None, Fetch.ONE)
-        page = sql_exec("SELECT * FROM characters " + qry, None, Fetch.ALL)
-        return total, page
+        total = sql_exec("SELECT COUNT(*) FROM characters WHERE PlayerName != '!PLACEHOLDER'", None, Fetch.ONE)
+        page = sql_exec("SELECT * FROM characters WHERE PlayerName != '!PLACEHOLDER' " + qry, None, Fetch.ALL)
+        return total, total, page
 
 
 def get_games_table(order_by, offset: int = 0, limit: int = 0, search: str = ""):
@@ -247,6 +259,7 @@ def get_games_table(order_by, offset: int = 0, limit: int = 0, search: str = "")
 
     qry = get_offset_limit_query(true_order, offset, limit)
     if search:
+        count = sql_exec("SELECT COUNT(*) FROM games", None, Fetch.ONE)
         s = '%' + search + '%'
         total = sql_exec("SELECT COUNT(*) FROM games WHERE "
                          "Name LIKE ? or Date LIKE ? or GameLevel LIKE ? or GM LIKE ? ",
@@ -254,12 +267,46 @@ def get_games_table(order_by, offset: int = 0, limit: int = 0, search: str = "")
         page = sql_exec("SELECT * FROM games WHERE "
                         "Name LIKE ? or Date LIKE ? or GameLevel LIKE ? or GM LIKE ? " + qry,
                         (s, s, s, s), Fetch.ALL)
-        return total, page
+        return count, total, page
     else:
         total = sql_exec("SELECT COUNT(*) FROM games ", None, Fetch.ONE)
         page = sql_exec("SELECT * FROM games " + qry, None, Fetch.ALL)
-        return total, page
+        return total, total, page
 
+
+# This not only reindexes but also CLEANS and FIXES any BUGS in ur table
+def reindex():
+    # Clean up invalid characters
+    pl = sql_exec("SELECT * FROM players", None, Fetch.ALL)
+    for i in pl:
+        i = list(i)
+        chars = sql_exec("SELECT * FROM characters WHERE PlayerName = ?", (i[PLAYERS.PlayerName], ), Fetch.ALL)
+        char_list = []
+        for j in chars:
+            char_list += [j[CHARACTERS.Name]]
+        i[PLAYERS.Characters] = list_to_string(char_list)
+        edit_player(i)
+
+    ch = sql_exec("SELECT * FROM characters", None, Fetch.ALL)
+    for i in ch:
+        i = list(i)
+        p = sql_exec("SELECT * FROM players WHERE PlayerName = ?", (i[CHARACTERS.PlayerName], ), Fetch.ONE)
+        # Player does not exist. Delete character
+        if not p:
+            print("WARNING: DELETING INVALID CHARACTER TIED TO MISSING PLAYER: ", i[CHARACTERS.PlayerName])
+            sql_exec("DELETE FROM characters WHERE PlayerName = ? and Name = ?",
+                     (i[CHARACTERS.PlayerName], i[CHARACTERS.Name]))
+            continue
+
+        # Reindex games
+        games = sql_exec("SELECT * FROM events WHERE PlayerName = ? and CharacterName = ? and RelatedID != ''",
+                         (i[CHARACTERS.Name], i[CHARACTERS.Name]), Fetch.ALL)
+        games_list = []
+        for j in games:
+            games_list += [j[EVENTS.RelatedID]]
+        i[CHARACTERS.Games] = list_to_string(games_list)
+        edit_character(i)
+    sql_exec("VACUUM")
 
 
 def init_db():
@@ -286,6 +333,31 @@ def init_db():
         sql_exec("ALTER TABLE characters ADD COLUMN Picture")
         sql_exec("ALTER TABLE players ADD COLUMN DiscordIntro")
         sql_exec("PRAGMA user_version = 1")
+
+    # V2, collate nocase
+    if user_version < 2:
+        sql_exec("ALTER TABLE characters RENAME TO characters_V1")
+        sql_exec("ALTER TABLE players RENAME TO players_V1")
+        sql_exec("ALTER TABLE games RENAME TO games_V1")
+        sql_exec("CREATE TABLE IF NOT EXISTS players(PlayerName COLLATE NOCASE, Karma, Characters, BonusXP, Upgrades, "
+                 "Enterer, DiscordIntro, PRIMARY KEY(PlayerName))")
+        sql_exec("CREATE TABLE IF NOT EXISTS characters(PlayerName COLLATE NOCASE, Name COLLATE NOCASE, Ancestry,"
+                 "Background, Class, Heritage, Unlocks, Rewards, Home, Pathbuilder, Comments, CommunityService, "
+                 "PDFs, FVTTs, XP, ExpectedGold, CurrentGold, Games, Items, Rares, Ironman, Enterer, Subclass, "
+                 "DiscordLink, Picture, PRIMARY KEY(PlayerName, Name))")
+        sql_exec(
+            "CREATE TABLE IF NOT EXISTS games(ID, Name COLLATE NOCASE, Date, Enterer, Time, "
+            "GameLevel, Items, GM, PRIMARY KEY(ID))")
+        # This also clears any dupes
+        sql_exec("INSERT OR IGNORE INTO players SELECT * FROM players_V1")
+        sql_exec("INSERT OR IGNORE INTO characters SELECT * FROM characters_V1")
+        sql_exec("INSERT OR IGNORE INTO games SELECT * FROM games_V1")
+        sql_exec("DROP TABLE players_V1")
+        sql_exec("DROP TABLE characters_V1")
+        sql_exec("DROP TABLE games_V1")
+        sql_exec("PRAGMA user_version = 2")
+        # Once every update is done, reindex to clean up bad data.
+        reindex()
 
 
 def get_player(name):
@@ -361,7 +433,7 @@ class GameChanges:
 
 
 def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[ett.EttGamePlayer],
-             continuation, comments, enterer, dry_run: int):
+             comments, enterer, dry_run: int):
     existing_games = sql_exec("""
         SELECT * FROM Games WHERE Name = ? and Date = ?
     """, (name, date), Fetch.ONE)
@@ -511,7 +583,7 @@ def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_fac
 
     # Add cost
     total_cost = 0
-    for i in items:
+    for i in legal_items:
         total_cost += i.cost * i.quantity * price_factor
     final_money = character[CHARACTERS.CurrentGold] - total_cost
     # Now add rare items to the rares if applicable
@@ -659,7 +731,7 @@ def string_list_to_list(elements: str):
     return element_list
 
 
-def list_to_string(elements: str):
+def list_to_string(elements: list):
     e_str = ""
     for element_index in range(len(elements)):
         e_str += elements[element_index]
