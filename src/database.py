@@ -567,6 +567,11 @@ def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_fac
     legal_items = []
     rare_items = []
     for i in items:
+        # Item was bought cheaper. Note this
+        if price_factor < 1.0:
+            i.name = i.name + "*"
+            i.cost = i.cost * price_factor
+
         # It's legal
         if i.level <= cur_level and i.rarity <= 1:
             legal_items += [i]
@@ -586,7 +591,7 @@ def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_fac
     # Add cost
     total_cost = 0
     for i in legal_items:
-        total_cost += i.cost * i.quantity * price_factor
+        total_cost += i.cost * i.quantity
     final_money = character[CHARACTERS.CurrentGold] - total_cost
     # Now add rare items to the rares if applicable
     cur_rares = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
