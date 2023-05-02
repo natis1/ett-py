@@ -815,7 +815,7 @@ def change_player_name(old_name: str, new_name: str):
         UPDATE events SET PlayerName = ? WHERE PlayerName = ?
     """, (new_name, old_name))
     sql_exec("""
-        UPDATE characters SET Name = ? WHERE PlayerName = ?
+        UPDATE characters SET PlayerName = ? WHERE PlayerName = ?
     """, (new_name, old_name))
     sql_exec("""
         UPDATE games SET GM = ? WHERE GM = ?
