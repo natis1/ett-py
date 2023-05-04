@@ -152,9 +152,11 @@ def edit_player_xptransfer():
     char = list(char)
     pl[PLAYERS.BonusXP] -= xp_sent
     gold_add = ett.ett_gold_add_xp(char[CHARACTERS.XP], xp_sent)
+    karma_add = ett.ett_leveling_karma(char[CHARACTERS.XP], xp_sent)
     char[CHARACTERS.XP] += xp_sent
     char[CHARACTERS.CurrentGold] += gold_add
     char[CHARACTERS.ExpectedGold] += gold_add
+    pl[PLAYERS.Karma] += karma_add
     err = database.edit_player(pl)
     if err:
         flash("ERROR: " + err, "error")
