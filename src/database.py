@@ -361,6 +361,12 @@ def init_db():
         # Once every update is done, reindex to clean up bad data.
         reindex()
 
+    # V3 - remove fvtt and pdf urls for each level, switching to "canonical" ones:
+    if user_version < 3:
+        sql_exec("UPDATE characters SET FVTTs = '' WHERE FVTTs LIKE '%\n%'")
+        sql_exec("UPDATE characters SET PDFs = '' WHERE FVTTs LIKE '%\n%'")
+        sql_exec("PRAGMA user_version = 3")
+
 
 def get_player(name):
     return sql_exec("""
@@ -387,7 +393,8 @@ def get_character(player_name, name):
 
 
 def add_character(player_name, enterer, name, ancestry, background, pc_class, heritage, pathbuilder, ironman, home='',
-                  starting_xp: float = 0.0, subclass: str = '', discord_link: str = '', picture: str = ''):
+                  starting_xp: float = 0.0, subclass: str = '', discord_link: str = '', picture: str = '',
+                  pdf_url: str = '', fvtt_url: str = '', gold: float = 15.0):
     if subclass is None:
         subclass = ''
     p = get_player(player_name)
@@ -404,7 +411,7 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
         print("Not enough character slots for PC " + name + " on player: " + player_name)
         return "Not enough character slots for PC " + name + " on player: " + player_name
 
-    gold = ett.STARTING_GOLD + ett.ett_gold_add_xp(0, starting_xp)
+    true_gold = ett.STARTING_GOLD + ett.ett_gold_add_xp(0, starting_xp)
     # Add character to char list
     chars = string_list_to_list(p[PLAYERS.Characters])
     chars += [name]
@@ -413,9 +420,10 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
 
     sql_exec("""
         INSERT INTO characters VALUES
-        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, '', '', ?, ?, ?, '', '', '', ?, ?, ?, ?, ?)""",
-             (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder, starting_xp,
-              gold, gold, ironman, enterer, subclass, discord_link, picture))
+        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, ?, ?, ?, ?, ?, '', '', '', ?, ?, ?, ?, ?)""",
+             (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder,
+              pdf_url, fvtt_url, starting_xp,
+              true_gold, gold, ironman, enterer, subclass, discord_link, picture))
 
 
 def get_game(name, date):

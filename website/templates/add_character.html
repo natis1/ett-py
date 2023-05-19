@@ -74,9 +74,24 @@
                minlength="2" placeholder="Tavern Region">
         </div>
         <div class="ettrow">
+        <label for="pdf" class="column">PDF URL:</label>
+        <input class="form-control column" name="pdf" id="pdf"
+               type="url" placeholder="https://example.com/my_pdf.pdf">
+        </div>
+        <div class="ettrow">
+        <label for="fvtt" class="column">FVTT URL:</label>
+        <input class="form-control column" name="fvtt" id="fvtt"
+               type="url" placeholder="https://example.com/my_fvtt.json">
+        </div>
+        <div class="ettrow">
         <label for="xp" class="column">Starting XP</label>
         <input class="form-control column" step="0.01" type="number" id="xp" name="xp" min="0" max="8000" placeholder="0">
         </div>
+        <div class="ettrow">
+        <label for="gold" class="column">Starting Gold</label>
+        <input class="form-control column" step="0.01" type="number" id="gold" name="gold" min="0" max="8000" placeholder="15">
+        </div>
+
     </div>
     <div align="center">
         <button type="submit" class="btn btn-primary">Add Character</button>

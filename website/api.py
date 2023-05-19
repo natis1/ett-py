@@ -345,26 +345,13 @@ def edit_character_core():
 @login_required
 def edit_character_pdfurl():
     url = request.form.get("url", type=str)
-    level = request.form.get("level", type=int)
-    if not url or level is None:
+    if not url:
         return api_error()
-    level = level - 1
-
     cur_char = get_character()
     if not cur_char:
         return api_error()
-    pdf_urls = cur_char[CHARACTERS.PDFs]
-    # Discard invalid fvtt url entries in DB
-    if not pdf_urls:
-        # setup fvtt urls for first time use
-        pdfs = 20 * ['']
-    else:
-        pdfs = database.string_list_to_list(pdf_urls)
-        if len(pdfs) != 20:
-            pdfs = 20 * ['']
 
-    pdfs[level] = url
-    cur_char[CHARACTERS.PDFs] = database.list_to_string(pdfs)
+    cur_char[CHARACTERS.PDFs] = url
     err = database.edit_character(cur_char)
     if err:
         flash("ERROR: " + err, "error")
@@ -375,26 +362,13 @@ def edit_character_pdfurl():
 @login_required
 def edit_character_fvtturl():
     url = request.form.get("url", type=str)
-    level = request.form.get("level", type=int)
-    if not url or level is None:
+    if not url:
         return api_error()
-    level = level - 1
 
     cur_char = get_character()
     if not cur_char:
         return api_error()
-    fvtt_urls = cur_char[CHARACTERS.FVTTs]
-    # Discard invalid fvtt url entries in DB
-    if not fvtt_urls:
-        # setup fvtt urls for first time use
-        fvtts = 20 * ['']
-    else:
-        fvtts = database.string_list_to_list(fvtt_urls)
-        if len(fvtts) != 20:
-            fvtts = 20 * ['']
-
-    fvtts[level] = url
-    cur_char[CHARACTERS.FVTTs] = database.list_to_string(fvtts)
+    cur_char[CHARACTERS.FVTTs] = url
     err = database.edit_character(cur_char)
     if err:
         flash("ERROR: " + err, "error")

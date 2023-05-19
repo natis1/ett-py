@@ -115,15 +115,8 @@ def view_character():
     rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
     extra = (ett.get_level(character[CHARACTERS.XP]), rare_unlocks, len(rare_unlocks),
              total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
-    fvtts = database.string_list_to_list(character[CHARACTERS.FVTTs])
-    if len(fvtts) != 20:
-        fvtts = 20 * ['']
-    pdfs = database.string_list_to_list(character[CHARACTERS.PDFs])
-    if len(pdfs) != 20:
-        pdfs = 20 * ['']
 
-    return render_template("view_character.html", user=current_user, c=character, e=extra,
-                           p=pdfs, f=fvtts)
+    return render_template("view_character.html", user=current_user, c=character, e=extra)
 
 
 @views.route('/edit_character', methods=['POST', 'GET'])
@@ -180,10 +173,21 @@ def add_character_post():
         xp = 0
     else:
         xp = float(xp)
+    pdf_urls = data.get('pdf')
+    if not pdf_urls:
+        pdf_urls = ''
+    fvtt_urls = data.get('fvtt')
+    if not fvtt_urls:
+        fvtt_urls = ''
+    gold = data.get('gold')
+    if not gold:
+        gold = 15
+    gold = int(gold)
     err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
                                  data.get("background"), data.get("class"), data.get("heritage"),
                                  data.get("pathbuilder"), int(data.get("ironman")), region, xp,
-                                 data.get("subclass"), data.get("discord"), data.get("picture"))
+                                 data.get("subclass"), data.get("discord"), data.get("picture"),
+                                 pdf_urls, fvtt_urls, gold)
     if err:
         flash("ERROR ADDING CHARACTER: " + err, "error")
     return redirect('/characters')
