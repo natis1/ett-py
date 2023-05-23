@@ -128,10 +128,10 @@ def ett_gold_add_xp(current_xp, xp_to_add):
 
 
 def ett_leveling_karma(current_xp, xp_to_add):
-    # if you would become level 2 but are not currently level 2, you gain an extra 3 karma.
+    # if you would become level 2 but are not currently level 2, you gain an extra 3 karma plus the 1 normal.
     if (current_xp + xp_to_add) >= XP_PER_LEVEL > current_xp:
-        return 3
-    # If you gain another level but are not currently that level you gain an extra 1 karma.
+        return 4
+    # If you gain another level but are not currently that level you gain 1 karma.
     cur_level = get_level(current_xp)
     new_level = get_level(current_xp + xp_to_add)
     if cur_level < new_level:
