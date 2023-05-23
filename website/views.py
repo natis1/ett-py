@@ -182,7 +182,7 @@ def add_character_post():
     gold = data.get('gold')
     if not gold:
         gold = 15
-    gold = int(gold)
+    gold = float(gold)
     err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
                                  data.get("background"), data.get("class"), data.get("heritage"),
                                  data.get("pathbuilder"), int(data.get("ironman")), region, xp,
