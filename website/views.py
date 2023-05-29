@@ -166,6 +166,7 @@ def add_character_post():
     print(request.form)
     data = request.form
     region = data.get('home')
+    pb = data.get("pathbuilder")
     if not region:
         region = 'Tavern Region'
     xp = data.get('xp')
@@ -183,9 +184,11 @@ def add_character_post():
     if not gold:
         gold = 15
     gold = float(gold)
+    if not pb:
+        pb = ''
     err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
                                  data.get("background"), data.get("class"), data.get("heritage"),
-                                 data.get("pathbuilder"), int(data.get("ironman")), region, xp,
+                                 pb, int(data.get("ironman")), region, xp,
                                  data.get("subclass"), data.get("discord"), data.get("picture"),
                                  pdf_urls, fvtt_urls, gold)
     if err:
