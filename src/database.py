@@ -459,14 +459,16 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
     for pl in players:
         # GM player
         if pl.player_level == 0:
-            xp = pl.time_played * 1.5
+            # JUNE special XP
+            xp = pl.time_played * 1.5 * ett.XP_MULTIPLIER
             if dry_run == 0:
                 gm = get_player(pl.player_name)
                 if gm:
                     gm = list(gm)
                     gm[PLAYERS.BonusXP] = gm[PLAYERS.BonusXP] + xp
-                    gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + 1
-                    pl.gained_karma = 1
+                    # JUNE special karma
+                    gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + 2
+                    pl.gained_karma = 2
                     edit_player(gm)
             if dry_run == 0 or dry_run == 2:
                 sql_exec("""
@@ -477,7 +479,8 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                             INSERT INTO events VALUES
                             (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', 0, ?)
                         """, (
-                        str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, pl.time_played * 1.5,
+                        str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date,
+                        pl.time_played * 1.5 * ett.XP_MULTIPLIER,
                         pl.gained_karma, 0, items_text, comments))
             else:
                 changes += [GameChanges(pl.player_name, 'GM', None, xp, 1)]
@@ -506,6 +509,8 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                 edit_character(character)
 
             expected_level = ett.get_level(character[CHARACTERS.XP])
+            # JUNE EXTRA KARMA
+            pl.gained_karma = 1
             net_karma = pl.gained_karma
             if not character[CHARACTERS.ExpectedGold]:
                 character[CHARACTERS.ExpectedGold] = 0
