@@ -461,6 +461,7 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
         if pl.player_level == 0:
             # JUNE special XP
             xp = pl.time_played * 1.5 * ett.XP_MULTIPLIER
+            pl.gained_karma = 2
             if dry_run == 0:
                 gm = get_player(pl.player_name)
                 if gm:
