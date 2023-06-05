@@ -65,6 +65,15 @@ def get_available_slots(upgrades: str, characters: list):
     return STARTING_SLOTS + new_faces - len(characters)
 
 
+def get_ultimate_tt(upgrades: str):
+    upgrades_elements = string_to_pf2e_element_list(upgrades)
+    true_tt = False
+    for i in upgrades_elements:
+        if i.name == "True Time Traveler" and i.quantity > 0:
+            true_tt = True
+    return true_tt
+
+
 def get_level(xp):
     lv = 1 + math.floor(xp / XP_PER_LEVEL)
     if lv > 20:

@@ -510,8 +510,6 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                 edit_character(character)
 
             expected_level = ett.get_level(character[CHARACTERS.XP])
-            # JUNE EXTRA KARMA
-            pl.gained_karma = 1
             net_karma = pl.gained_karma
             if not character[CHARACTERS.ExpectedGold]:
                 character[CHARACTERS.ExpectedGold] = 0

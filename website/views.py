@@ -254,18 +254,22 @@ def add_adventure_post():
     player_names = request.form.getlist('players[][name]')
     player_levels = request.form.getlist('players[][level]')
     player_times = request.form.getlist('players[][time]')
-    print("karma list is ", request.form.getlist('players[][karma]', int))
     player_karma = parse_button(request.form.getlist('players[][karma]', int))
-    print("player karma is ", player_karma)
     player_tt = parse_button(request.form.getlist('players[][ttcost]', int))
-    total_karma = [x - y for x, y in zip(player_karma, player_tt)]
+
     player_died = parse_button(request.form.getlist('players[][died]', int))
-    print("Karma gained + died is ", total_karma, player_died)
     for i in range(0, players_num):
         pl_name = player_names[i]
         pl_name_split = pl_name.split("|", 1)
+        actual_pl = database.get_player(pl_name_split[0])
+        if actual_pl is not None:
+            actual_pl = list(actual_pl)
+            if ett.get_ultimate_tt(actual_pl[PLAYERS.Upgrades]):
+                player_tt[i] = 0
+        # JUNE EXTRA KARMA
+        player_karma[i] = 1
         pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], int(player_levels[i]),
-                               float(player_times[i]), int(total_karma[i]), not bool(player_died[i]))
+                               float(player_times[i]), int(player_karma[i] - player_tt[i]), not bool(player_died[i]))
         player_list += [pl]
 
     game_name = request.form.get('gameName')
