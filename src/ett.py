@@ -110,6 +110,12 @@ def ett_xp_rate(player_level, party_level):
 def ett_gold_add_xp(current_xp, xp_to_add):
     gold_rates = [3, 4, 7.5, 13, 20, 30, 45, 60, 90, 120, 170, 250, 375, 550, 800, 1250, 1900, 3100, 5300, 7400]
     cumulative_gold = 0
+    # If we are going past level 21, set us to 21 ie the max gold
+    if (current_xp + xp_to_add) > 240:
+        xp_to_add = 240 - current_xp
+        # adding xp but we are maxed out, and our total is still more than 240
+        if xp_to_add < 0:
+            return 0
 
     # What if we are subtracting XP? Parse that here.
     if xp_to_add < 0:
