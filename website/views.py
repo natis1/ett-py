@@ -266,8 +266,6 @@ def add_adventure_post():
             actual_pl = list(actual_pl)
             if ett.get_ultimate_tt(actual_pl[PLAYERS.Upgrades]):
                 player_tt[i] = 0
-        # JUNE EXTRA KARMA
-        player_karma[i] = 1
         pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], int(player_levels[i]),
                                float(player_times[i]), int(player_karma[i] - player_tt[i]), not bool(player_died[i]))
         player_list += [pl]

@@ -82,7 +82,7 @@ def get_level(xp):
 
 
 # June Bonus XP
-XP_MULTIPLIER = 1.5
+XP_MULTIPLIER = 1
 
 
 def ett_xp_rate(player_level, party_level):
