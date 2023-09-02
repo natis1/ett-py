@@ -559,7 +559,7 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
             else:
                 changes += [GameChanges(pl.player_name, pl.name, items, xp_added, net_karma, cs_change)]
             if dry_run == 0:
-                player[PLAYERS.Karma] = player[PLAYERS.Karma] + net_karma
+                player[PLAYERS.Karma] = int(player[PLAYERS.Karma]) + int(net_karma)
                 edit_player(player)
                 edit_character(character)
     if dry_run == 1:
