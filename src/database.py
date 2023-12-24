@@ -20,10 +20,10 @@ class PLAYERS(IntEnum):
     PlayerName = 0
     Karma = 1
     Characters = 2
-    BonusXP = 3
-    Upgrades = 4
-    Enterer = 5
-    DiscordIntro = 6
+    Upgrades = 3
+    Enterer = 4
+    DiscordIntro = 5
+    NrGames = 6
 
 
 class CHARACTERS(IntEnum):
@@ -38,20 +38,14 @@ class CHARACTERS(IntEnum):
     Home = 8
     Pathbuilder = 9
     Comments = 10
-    CommunityService = 11
-    PDFs = 12
-    FVTTs = 13
-    XP = 14
-    ExpectedGold = 15
-    CurrentGold = 16
-    Games = 17
-    Items = 18
-    Rares = 19
-    Ironman = 20
-    Enterer = 21
-    Subclass = 22
-    DiscordLink = 23
-    Picture = 24
+    PDFs = 11
+    FVTTs = 12
+    Games = 13
+    Enterer = 14
+    Subclass = 15
+    DiscordLink = 16
+    Picture = 17
+    NrGames = 18
 
 
 class GAMES(IntEnum):
@@ -61,8 +55,7 @@ class GAMES(IntEnum):
     Enterer = 3
     Time = 4
     GameLevel = 5
-    Items = 6
-    GM = 7
+    GM = 6
 
 
 class HISTORIANS(IntEnum):
@@ -79,15 +72,10 @@ class EVENTS(IntEnum):
     PlayerName = 3
     CharacterName = 4
     EventDate = 5
-    XPAdjust = 6
-    KarmaAdjust = 7
-    GoldAdjust = 8
-    ItemsBought = 9
-    ItemsLost = 10
-    Unlocks = 11
-    Rewards = 12
-    CommunityService = 13
-    Comment = 14
+    KarmaAdjust = 6
+    Unlocks = 7
+    Rewards = 8
+    Comment = 9
 
 
 work_queue = queue.Queue()
@@ -127,16 +115,15 @@ def sql_exec(sql, params=None, fetch: Fetch = Fetch.NONE):
     return result_queue.get()
 
 
-SAFE_PLAYER_COLUMNS = ['PlayerName', 'Karma', 'Characters', 'BonusXP', 'Upgrades', 'Enterer',
-                       'PlayerName desc', 'Karma desc', 'Characters desc', 'BonusXP desc',
-                       'Upgrades desc', 'Enterer desc']
+SAFE_PLAYER_COLUMNS = ['PlayerName', 'Karma', 'Characters', 'Upgrades', 'Enterer', 'NrGames',
+                       'PlayerName desc', 'Karma desc', 'Characters desc',
+                       'Upgrades desc', 'Enterer desc', 'NrGames desc']
 SAFE_CHARACTER_COLUMNS = ['PlayerName', 'Name', 'Ancestry', 'Background', 'Class', 'Heritage',
-                          'Unlocks', 'Rewards', 'Home', 'CommunityService', 'XP', 'ExpectedGold',
-                          'CurrentGold', 'Ironman', 'Enterer',
-                          'PlayerName desc', 'Name desc', 'Ancestry desc', 'Background desc', 'Class desc',
-                          'Heritage desc', 'Unlocks desc', 'Rewards desc', 'Home desc', 'CommunityService desc',
-                          'XP desc', 'ExpectedGold desc', 'CurrentGold desc', 'Ironman desc', 'Enterer desc',
-                          'Subclass', 'Subclass desc']
+                          'Unlocks', 'Rewards', 'Home', 'Enterer', 'NrGames'
+                                                                   'PlayerName desc', 'Name desc', 'Ancestry desc',
+                          'Background desc', 'Class desc',
+                          'Heritage desc', 'Unlocks desc', 'Rewards desc', 'Home desc',
+                          'Enterer desc', 'Subclass', 'Subclass desc', 'NrGames desc']
 SAFE_GAME_COLUMNS = ['ID', 'Name', 'Date', 'Enterer', 'Time', 'GameLevel', 'GM',
                      'ID desc', 'Name desc', 'Date desc', 'Enterer desc', 'Time desc', 'GameLevel desc', 'GM desc']
 
@@ -206,7 +193,7 @@ def get_players_table(order_by, offset: int = 0, limit: int = 0, search: str = "
             page = sql_exec("SELECT * FROM players WHERE PlayerName = '!PLACEHOLDER' " + qry, None, Fetch.ALL)
         else:
             total = sql_exec("SELECT COUNT(*) FROM players WHERE PlayerName != '!PLACEHOLDER' and PlayerName LIKE ?"
-                             , ('%'+search+'%',), Fetch.ONE)
+                             , ('%' + search + '%',), Fetch.ONE)
             page = sql_exec("SELECT * FROM players WHERE PlayerName != '!PLACEHOLDER' and PlayerName LIKE ? " + qry
                             , ('%' + search + '%',), Fetch.ALL)
         return count, total, page
@@ -278,21 +265,10 @@ def get_games_table(order_by, offset: int = 0, limit: int = 0, search: str = "")
 
 # This not only reindexes but also CLEANS and FIXES any BUGS in ur table
 def reindex():
-    # Clean up invalid characters
-    pl = sql_exec("SELECT * FROM players", None, Fetch.ALL)
-    for i in pl:
-        i = list(i)
-        chars = sql_exec("SELECT * FROM characters WHERE PlayerName = ?", (i[PLAYERS.PlayerName], ), Fetch.ALL)
-        char_list = []
-        for j in chars:
-            char_list += [j[CHARACTERS.Name]]
-        i[PLAYERS.Characters] = list_to_string(char_list)
-        edit_player(i)
-
     ch = sql_exec("SELECT * FROM characters", None, Fetch.ALL)
     for i in ch:
         i = list(i)
-        p = sql_exec("SELECT * FROM players WHERE PlayerName = ?", (i[CHARACTERS.PlayerName], ), Fetch.ONE)
+        p = sql_exec("SELECT * FROM players WHERE PlayerName = ?", (i[CHARACTERS.PlayerName],), Fetch.ONE)
         # Player does not exist. Delete character
         if not p:
             print("WARNING: DELETING INVALID CHARACTER TIED TO MISSING PLAYER: ", i[CHARACTERS.PlayerName])
@@ -306,8 +282,35 @@ def reindex():
         games_list = []
         for j in games:
             games_list += [j[EVENTS.RelatedID]]
-        i[CHARACTERS.Games] = list_to_string(games_list)
+        existing_games = string_list_to_list(i[CHARACTERS.Games])
+        games_list += existing_games
+        deduplicated = list(set(games_list))
+        i[CHARACTERS.Games] = list_to_string(deduplicated)
+        i[CHARACTERS.NrGames] = len(deduplicated)
         edit_character(i)
+
+    # Clean up invalid characters
+    pl = sql_exec("SELECT * FROM players", None, Fetch.ALL)
+    for i in pl:
+        i = list(i)
+        nr_games = 0
+        chars = sql_exec("SELECT * FROM characters WHERE PlayerName = ?", (i[PLAYERS.PlayerName],), Fetch.ALL)
+        char_list = []
+        for j in chars:
+            char_list += [j[CHARACTERS.Name]]
+            nr_games += j[CHARACTERS.NrGames]
+
+        gm_games = sql_exec("SELECT * FROM events WHERE PlayerName = ? and CharacterName = '' and RelatedID != '' ",
+                            (i[PLAYERS.PlayerName], ), Fetch.ALL)
+
+        gm_games_ct = len(list(gm_games))
+        print("GM: " + i[PLAYERS.PlayerName] +
+              " has: " + str(nr_games) + " games on their chars and "
+              + str(gm_games_ct) + " gm games.")
+
+        i[PLAYERS.Characters] = list_to_string(char_list)
+        i[PLAYERS.NrGames] = nr_games + gm_games_ct
+        edit_player(i)
     sql_exec("VACUUM")
 
 
@@ -367,6 +370,53 @@ def init_db():
         sql_exec("UPDATE characters SET PDFs = '' WHERE FVTTs LIKE '%\n%'")
         sql_exec("PRAGMA user_version = 3")
 
+    # V4 - remove xp, count games by raw number
+    if user_version < 4:
+        sql_exec("ALTER TABLE characters RENAME TO characters_V3")
+        sql_exec("ALTER TABLE players RENAME TO players_V3")
+        sql_exec("ALTER TABLE games RENAME TO games_V3")
+        sql_exec("ALTER TABLE events RENAME TO events_V3")
+
+        sql_exec("CREATE TABLE IF NOT EXISTS players(PlayerName COLLATE NOCASE, Karma, Characters, Upgrades, "
+                 "Enterer, DiscordIntro, NrGames, PRIMARY KEY(PlayerName))")
+        sql_exec("CREATE TABLE IF NOT EXISTS characters(PlayerName COLLATE NOCASE, Name COLLATE NOCASE, Ancestry, "
+                 "Background, Class, Heritage, Unlocks, Rewards, Home, Pathbuilder, Comments, "
+                 "PDFs, FVTTs, Games, Enterer, Subclass, "
+                 "DiscordLink, Picture, NrGames, PRIMARY KEY(PlayerName, Name))")
+        sql_exec(
+            "CREATE TABLE IF NOT EXISTS games(ID, Name COLLATE NOCASE, Date, Enterer, Time, "
+            "GameLevel, GM, PRIMARY KEY(ID))")
+        sql_exec(
+            "CREATE TABLE IF NOT EXISTS events(ID, RelatedID, TimeStamp, PlayerName, CharacterName, EventDate, "
+            "KarmaAdjust, Unlocks, Rewards, Comment, PRIMARY KEY(ID))")
+        # This also clears any dupes
+        sql_exec("INSERT OR IGNORE INTO players(PlayerName, Karma, Characters, "
+                 "Upgrades, Enterer, DiscordIntro)"
+                 " SELECT PlayerName, Karma, Characters, "
+                 "Upgrades, Enterer, DiscordIntro FROM players_V3")
+        sql_exec("INSERT OR IGNORE INTO characters(PlayerName, Name, "
+                 "Ancestry, Background, Class, Heritage, Unlocks, Rewards, "
+                 "Home, Pathbuilder, Comments, PDFs, FVTTs, Games, Enterer, "
+                 "Subclass, DiscordLink, Picture) SELECT PlayerName, Name, "
+                 "Ancestry, Background, Class, Heritage, Unlocks, Rewards, "
+                 "Home, Pathbuilder, Comments, PDFs, FVTTs, Games, Enterer, "
+                 "Subclass, DiscordLink, Picture FROM characters_V3")
+        sql_exec("INSERT OR IGNORE INTO games SELECT ID, Name, Date, Enterer, "
+                 "Time, GameLevel, GM FROM games_V3")
+        sql_exec("INSERT OR IGNORE INTO events(ID, RelatedID, TimeStamp, "
+                 "PlayerName, CharacterName, EventDate, KarmaAdjust, Unlocks, "
+                 "Rewards, Comment) SELECT ID, RelatedID, TimeStamp, "
+                 "PlayerName, CharacterName, EventDate, KarmaAdjust, Unlocks, "
+                 "Rewards, Comment FROM events_V3")
+
+        sql_exec("DROP TABLE players_V3")
+        sql_exec("DROP TABLE characters_V3")
+        sql_exec("DROP TABLE games_V3")
+        sql_exec("DROP TABLE events_V3")
+        # Reindex required to build nr games list
+        reindex()
+        sql_exec("PRAGMA user_version = 4")
+
 
 def get_player(name):
     return sql_exec("""
@@ -374,16 +424,16 @@ def get_player(name):
     """, (name,), Fetch.ONE)
 
 
-def add_player(name, enterer, starting_karma: int = 0, starting_xp: float = 0.0, discord: str = ''):
+def add_player(name, enterer, starting_karma: int = 0, discord: str = ''):
     if get_player(name) is not None:
         print("Player already exists " + name)
         return False
 
-    print("Adding Character " + name)
+    print("Adding Player " + name)
     sql_exec("""
         INSERT INTO players VALUES
-        (?, ?, '', ?, '', ?, ?)
-    """, (name, starting_karma, starting_xp, enterer, discord))
+        (?, ?, '', '', ?, ?, 0)
+    """, (name, starting_karma, enterer, discord))
 
 
 def get_character(player_name, name):
@@ -392,9 +442,9 @@ def get_character(player_name, name):
     """, (player_name, name), Fetch.ONE)
 
 
-def add_character(player_name, enterer, name, ancestry, background, pc_class, heritage, pathbuilder, ironman, home='',
-                  starting_xp: float = 0.0, subclass: str = '', discord_link: str = '', picture: str = '',
-                  pdf_url: str = '', fvtt_url: str = '', gold: float = 15.0):
+def add_character(player_name, enterer, name, ancestry, background, pc_class, heritage, pathbuilder, home='',
+                  subclass: str = '', discord_link: str = '', picture: str = '',
+                  pdf_url: str = '', fvtt_url: str = ''):
     if subclass is None:
         subclass = ''
     p = get_player(player_name)
@@ -411,7 +461,6 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
         print("Not enough character slots for PC " + name + " on player: " + player_name)
         return "Not enough character slots for PC " + name + " on player: " + player_name
 
-    true_gold = ett.STARTING_GOLD + ett.ett_gold_add_xp(0, starting_xp)
     # Add character to char list
     chars = string_list_to_list(p[PLAYERS.Characters])
     chars += [name]
@@ -420,10 +469,9 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
 
     sql_exec("""
         INSERT INTO characters VALUES
-        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', 0, ?, ?, ?, ?, ?, '', '', '', ?, ?, ?, ?, ?)""",
+        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', ?, ?, '', ?, ?, ?, ?, 0)""",
              (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder,
-              pdf_url, fvtt_url, starting_xp,
-              true_gold, gold, ironman, enterer, subclass, discord_link, picture))
+              pdf_url, fvtt_url, enterer, subclass, discord_link, picture))
 
 
 def get_game(name, date):
@@ -436,14 +484,12 @@ def get_game(name, date):
 class GameChanges:
     player_name: str
     name: str = ''
-    items: list[ett.Pf2eElement] = None
-    xp_change: float = 0
     karma_change: int = 0
-    cs_change: float = 0
+    net_games: int = 0
 
 
-def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[ett.EttGamePlayer],
-             comments, enterer, dry_run: int):
+def add_game(name, date, game_time, players: list[ett.EttGamePlayer],
+             comments, enterer, dry_run: int, game_level: int):
     existing_games = sql_exec("""
         SELECT * FROM Games WHERE Name = ? and Date = ?
     """, (name, date), Fetch.ONE)
@@ -451,40 +497,35 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
         print("This game is already logged in our DB. Exiting. ")
         return "This game is already logged in our DB. Exiting."
     comments = "GAME PLAYED: " + comments
-    game_level = ett.ett_party_level(players)
-    items_text = ett.pf2e_element_list_to_string(items)
     timestamp = time.time()
     game_id = str(uuid.uuid4())
     changes = []
     for pl in players:
         # GM player
-        if pl.player_level == 0:
-            # JUNE special XP
-            xp = pl.time_played * 1.5 * ett.XP_MULTIPLIER
+        if pl.name == '':
             pl.gained_karma = 2
             if dry_run == 0:
                 gm = get_player(pl.player_name)
                 if gm:
                     gm = list(gm)
-                    gm[PLAYERS.BonusXP] = gm[PLAYERS.BonusXP] + xp
-                    # JUNE special karma
-                    gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + 1
-                    pl.gained_karma = 1
+                    gm[PLAYERS.Karma] = gm[PLAYERS.Karma] + pl.gained_karma
                     edit_player(gm)
             if dry_run == 0 or dry_run == 2:
                 sql_exec("""
                          INSERT INTO games VALUES
-                         (?, ?, ?, ?, ?, ?, ?, ?)
-                         """, (game_id, name, date, enterer, game_time, game_level, items_text, pl.player_name))
+                         (?, ?, ?, ?, ?, ?, ?)
+                         """, (game_id, name, date, enterer, game_time, game_level, pl.player_name))
                 sql_exec("""
                             INSERT INTO events VALUES
-                            (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', 0, ?)
+                            (?, ?, ?, ?, ?, ?, ?, '', '', ?)
                         """, (
-                        str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date,
-                        pl.time_played * 1.5 * ett.XP_MULTIPLIER,
-                        pl.gained_karma, 0, items_text, comments))
+                    str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, 1,
+                    comments))
             else:
-                changes += [GameChanges(pl.player_name, 'GM', None, xp, 1)]
+                gm = get_player(pl.player_name)
+                if gm:
+                    gm = list(gm)
+                    changes += [GameChanges(pl.player_name, '', pl.gained_karma, int(gm[PLAYERS.NrGames]) + 1)]
 
         else:
             character = get_character(pl.player_name, pl.name)
@@ -500,179 +541,34 @@ def add_game(name, date, game_time, items: list[ett.Pf2eElement], players: list[
                 print("ERROR: Player with name: " + pl.player_name + " does not exist!")
                 continue
             player = list(player)
+            net_karma = pl.gained_karma
+            games = string_list_to_list(character[CHARACTERS.Games])
+            games += [game_id]
+            nr_games = len(games)
+            if nr_games % 3 == 0:
+                net_karma += 1
 
             if dry_run == 2 or dry_run == 0:
                 # Add game to player games list. Ensure this transaction commits before even any others.
                 # It should always transact to avoid needing to reindex later.
-                games = string_list_to_list(character[CHARACTERS.Games])
-                games += [game_id]
                 character[CHARACTERS.Games] = list_to_string(games)
+                character[CHARACTERS.NrGames] = nr_games
                 edit_character(character)
 
-            expected_level = ett.get_level(character[CHARACTERS.XP])
-            net_karma = pl.gained_karma
-            if not character[CHARACTERS.ExpectedGold]:
-                character[CHARACTERS.ExpectedGold] = 0
-            if not character[CHARACTERS.CurrentGold]:
-                character[CHARACTERS.CurrentGold] = 0
-            # subtract any community service you need to do
-            cs_remaining = character[CHARACTERS.CommunityService]
-            cs_change = -cs_remaining
-            if not (character[CHARACTERS.CommunityService] == '' or character[CHARACTERS.CommunityService] == 0):
-                if (character[CHARACTERS.CommunityService] - pl.time_played) <= 0:
-                    cs_remaining = 0
-                    pl.time_played = pl.time_played - character[CHARACTERS.CommunityService]
-                else:
-                    cs_remaining = character[CHARACTERS.CommunityService] - pl.time_played
-                    pl.time_played = 0
-            # add gold and XP
-
-            xp_added = ett.ett_xp_rate(pl.player_level, game_level) * pl.time_played
-            adventure_gold = ett.ett_gold_add_xp(character[CHARACTERS.XP], xp_added)
-            total_xp = xp_added + character[CHARACTERS.XP]
-            # Add karma for reaching 2 or for gaining a level.
-            extra_karma = ett.ett_leveling_karma(character[CHARACTERS.XP], xp_added)
-            net_karma += extra_karma
-            character[CHARACTERS.ExpectedGold] = adventure_gold + character[CHARACTERS.ExpectedGold]
-            character[CHARACTERS.CurrentGold] = adventure_gold + character[CHARACTERS.CurrentGold]
-
-            cur_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
-            # Even if no new items are unlocked. This removes all AT LEVEL items from the
-            # unlocked list.
-            unlocks = ett.ett_parse_unlocks(cur_unlocks, items, [], ett.get_level(total_xp))
-            character[CHARACTERS.Unlocks] = ett.pf2e_element_list_to_string(unlocks)
-            # If you died, your community service gets set from your current level
-            # But you at least gain the xp from playing.
-            if not pl.alive:
-                cs_remaining = ett.ett_died_cs(pl, ett.get_level(total_xp), character[CHARACTERS.Ironman])
-                cs_change += cs_remaining
-            # Update the player with the new game information
-
-            character[CHARACTERS.CommunityService] = cs_remaining
-            character[CHARACTERS.XP] = total_xp
             if dry_run == 0 or dry_run == 2:
                 sql_exec("""
                     INSERT INTO events VALUES
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, '', ?, ?)
-                    """, (str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, xp_added, net_karma,
-                    adventure_gold, items_text, cs_change, comments))
+                    (?, ?, ?, ?, ?, ?, ?, '', '', ?)
+                    """, (str(uuid.uuid4()), game_id, timestamp, pl.player_name, pl.name, date, net_karma,
+                          comments))
             else:
-                changes += [GameChanges(pl.player_name, pl.name, items, xp_added, net_karma, cs_change)]
+                changes += [GameChanges(pl.player_name, pl.name, net_karma, nr_games)]
             if dry_run == 0:
                 player[PLAYERS.Karma] = int(player[PLAYERS.Karma]) + int(net_karma)
                 edit_player(player)
                 edit_character(character)
     if dry_run == 1:
         return changes
-
-
-def buy_items(character, date, comments, items: list[ett.Pf2eElement], price_factor: float = 1.0):
-    if len(character) != len(CHARACTERS):
-        print("INVALID CHARACTER: ", character)
-        return "Invalid character. Unable to parse buy_items. Please report as a bug."
-
-    comments = "BUY EVENT: " + comments
-    timestamp = time.time()
-
-    # Check if items are legal
-    cur_level = ett.get_level(character[CHARACTERS.XP])
-    unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
-    legal_items = []
-    rare_items = []
-    for i in items:
-        # Item was bought cheaper. Note this
-        if price_factor < 1.0:
-            i.name = i.name + "*"
-            i.cost = i.cost * price_factor
-
-        # It's legal
-        if i.level <= cur_level and i.rarity <= 1:
-            legal_items += [i]
-            continue
-        # You unlocked it so it's legal
-        unlocked_rare = False
-        for j in unlocks:
-            # You have the right level for it
-            if i.name == j.name and i.level <= (cur_level + 2):
-                legal_items += [i]
-                unlocked_rare = True
-        # It's legal but requires a rare unlock potentially
-        if i.level <= cur_level and (not unlocked_rare):
-            rare_items += [i]
-            legal_items += [i]
-
-    # Add cost
-    total_cost = 0
-    for i in legal_items:
-        total_cost += i.cost * i.quantity
-    final_money = character[CHARACTERS.CurrentGold] - total_cost
-    # Now add rare items to the rares if applicable
-    cur_rares = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
-    rares = ett.ett_parse_unlocks(cur_rares, rare_items, [], 20)
-    # Finally add all items together
-    cur_items = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
-    output_items = cur_items
-    for i in legal_items:
-        found_item = False
-        for j in range(len(cur_items)):
-            if i.name == cur_items[j].name:
-                output_items[j].quantity += i.quantity
-                found_item = True
-                break
-        if not found_item:
-            output_items += [i]
-    character[CHARACTERS.CurrentGold] = final_money
-    character[CHARACTERS.Rares] = ett.pf2e_element_list_to_string(rares)
-    character[CHARACTERS.Items] = ett.pf2e_element_list_to_string(output_items)
-    sql_exec("""
-        INSERT INTO events VALUES
-        (?, '', ?, ?, ?, ?, 0, 0, ?, ?, '', '', ?, '', ?)
-    """, (str(uuid.uuid4()), timestamp, character[CHARACTERS.PlayerName],
-          character[CHARACTERS.Name], date, -total_cost,
-          ett.pf2e_element_list_to_string(legal_items), ett.pf2e_element_list_to_string(rare_items), comments))
-    return edit_character(character)
-
-
-# For selling items. Also for using items in an adventure
-# set price factor to 0 if you are using an item and price factor to
-def sell_items(character, date, comments, items: list[ett.Pf2eElement], price_factor: float = 0.5):
-    if len(character) != len(CHARACTERS):
-        print("INVALID CHARACTER: ", character)
-        return "Invalid character. Unable to parse sell_items. Please report as a bug."
-
-    comments = "SELL EVENT: " + comments
-    timestamp = time.time()
-    cur_items = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
-    cur_gold = character[CHARACTERS.CurrentGold]
-    final_items = []
-    gold_sold = 0
-    for j in cur_items:
-        for i in items:
-            if i.name == j.name:
-                # We are able to sell all of our items
-                if i.quantity <= j.quantity:
-                    j.quantity -= i.quantity
-                    # NOTE: DO NOT PULL COST FROM i.
-                    # We do not expect i to hold the cost. j should.
-                    gold_sold += i.quantity * price_factor * j.cost
-                else:
-                    # Otherwise, sell all that we can
-                    gold_sold += j.quantity * price_factor * j.cost
-                    j.quantity = 0
-        # If we still have stock left after doing the sell, we want to add this item to the list of items to return
-        if j.quantity > 0:
-            final_items += [j]
-
-    final_str = ett.pf2e_element_list_to_string(final_items)
-    final_gold = cur_gold + gold_sold
-    character[CHARACTERS.CurrentGold] = final_gold
-    character[CHARACTERS.Items] = final_str
-    sql_exec("""
-            INSERT INTO events VALUES
-            (?, '', ?, ?, ?, ?, 0, 0, ?, '', ?, '', '', '',  ?)
-        """, (str(uuid.uuid4()), timestamp, character[CHARACTERS.PlayerName], character[CHARACTERS.Name],
-              date, gold_sold, ett.pf2e_element_list_to_string(items), comments))
-    return edit_character(character)
 
 
 def edit_player(player: list):
@@ -689,7 +585,7 @@ def edit_player(player: list):
     # move playername to the end so that query works
     player = player[1:] + player[:1]
     sql_exec("""UPDATE players SET Karma = ?, Characters = ?,
-    BonusXP = ?, Upgrades = ?, Enterer = ?, DiscordIntro = ?
+    Upgrades = ?, Enterer = ?, DiscordIntro = ?, NrGames = ?
     WHERE PlayerName = ?
     """, tuple(player))
 
@@ -710,9 +606,9 @@ def edit_character(character: list):
     character = character[2:] + character[:2]
     # Final character Data to write:
     sql_exec("""UPDATE characters SET Ancestry = ?, Background = ?, Class = ?, Heritage = ?,
-        Unlocks = ?, Rewards = ?, Home = ?, Pathbuilder = ?, Comments = ?, CommunityService = ?,
-        PDFs = ?, FVTTs = ?, XP = ?, ExpectedGold = ?, CurrentGold = ?, Games = ?, Items = ?,
-        Rares = ?, Ironman = ?, Enterer = ?, Subclass = ?, DiscordLink = ?, Picture = ?
+        Unlocks = ?, Rewards = ?, Home = ?, Pathbuilder = ?, Comments = ?,
+        PDFs = ?, FVTTs = ?, Games = ?, 
+        Enterer = ?, Subclass = ?, DiscordLink = ?, Picture = ?, NrGames = ?
         WHERE PlayerName = ? and Name = ?
     """, tuple(character))
 
@@ -732,7 +628,7 @@ def edit_game(game: list):
     game = game[1:] + game[:1]
     # Final character Data to write:
     sql_exec("""UPDATE games set Name = ?, Date = ?, Enterer = ?, Time = ?,
-    GameLevel = ?, Items = ?, GM = ? WHERE ID = ?
+    GameLevel = ?, GM = ? WHERE ID = ?
     """, tuple(game))
 
 
@@ -762,7 +658,6 @@ def list_to_string(elements: list):
 
 # oh no this feels so dangerous and wrong
 def change_character_name(cur_character: list, new_name: str):
-
     if len(cur_character) != len(CHARACTERS):
         print("INVALID CHARACTER: ", cur_character)
         return "INVALID CHARACTER: " + str(cur_character)
@@ -860,25 +755,31 @@ def delete_character(player_name: str, char_name: str):
 def delete_player(player_name: str):
     sql_exec("""
         DELETE FROM players WHERE PlayerName = ?
-    """, (player_name, ))
+    """, (player_name,))
     sql_exec("""
         DELETE FROM characters WHERE PlayerName = ?
-    """, (player_name, ))
+    """, (player_name,))
     sql_exec("""
         DELETE FROM events WHERE PlayerName = ?
-    """, (player_name, ))
+    """, (player_name,))
 
 
 def delete_game(game_id: str):
     sql_exec("""
         DELETE FROM games WHERE ID = ?
-    """, (game_id, ))
+    """, (game_id,))
     events = sql_exec("""
         SELECT * FROM events WHERE RelatedID = ?
-    """, (game_id, ), Fetch.ALL)
+    """, (game_id,), Fetch.ALL)
     for e in events:
         e_list = list(e)
         char = get_character(e_list[EVENTS.PlayerName], e_list[EVENTS.CharacterName])
+        p = get_player(e_list[EVENTS.PlayerName])
+        if p:
+            p_list = list(p)
+            p_list[PLAYERS.NrGames] = int(p_list[PLAYERS.NrGames]) - 1
+            edit_player(p)
+
         if char is None:
             continue
         c_list = list(char)
@@ -888,8 +789,9 @@ def delete_game(game_id: str):
             if i != game_id:
                 new_games += [i]
         c_list[CHARACTERS.Games] = list_to_string(new_games)
+        c_list[CHARACTERS.NrGames] = int(c_list[CHARACTERS.NrGames]) - 1
         edit_character(c_list)
 
     sql_exec("""
         DELETE FROM events WHERE RelatedID = ?
-    """, (game_id, ))
+    """, (game_id,))

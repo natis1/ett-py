@@ -24,47 +24,6 @@
     </div>
     <br>
 
-    <form action="/api/edit_player_xptransfer" method="POST">
-        <input type="hidden" name="PlayerName" value="{{ p[0] }}">
-        <div class="ettrow">
-            <label for="xp" class="column">Unassigned XP:</label>
-            <input class="form-control column" name="xp" id="xp" step="0.01"
-                   min="0" type="number" value="{{ p[3] }}" readonly>
-        </div>
-        <div class="ettrow">
-            <label for="xpsend" class="column">XP to transfer:</label>
-            <input class="form-control column" name="xpsend" id="xpsend" step="0.01"
-                   min="0.01" type="number" required>
-        </div>
-        <div class="ettrow">
-            <label for="sendto" class="column">Send XP to:</label>
-            <select class="form-control column" id="sendto" name="sendto">
-                {% for c in my_chars %}
-                <option value="{{ p[0] }}|{{ c }}">{{ p[0] }} -> {{ c }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="ettrow">
-            <div class="column"></div>
-            <button type="submit" class="btn btn-success column">Transfer XP</button>
-        </div>
-        <br>
-    </form>
-    <form class="danger" action="/api/edit_player_xpedit" method="POST">
-        <input type="hidden" name="PlayerName" value="{{ p[0] }}">
-        <input type="hidden" name="danger" value="X">
-        <div class="ettrow">
-            <label for="xp" class="column">Unassigned XP:</label>
-            <input class="form-control column" name="xp" id="xp" step="0.01"
-                   min="0" type="number" value="{{ p[3] }}">
-        </div>
-        <div class="ettrow">
-            <div class="column"></div>
-            <button type="submit" class="btn btn-warning column">Edit Unassigned XP</button>
-        </div>
-        <br>
-    </form>
     <form class="danger" action="/api/edit_player_karmaadd" method="POST">
         <input type="hidden" name="PlayerName" value="{{ p[0] }}">
         <input type="hidden" name="danger" value="X">
@@ -109,7 +68,7 @@
         <input type="hidden" name="danger" value="X">
         <div class="ettrow">
             <label for="intro" class="column">Discord Intro URL:</label>
-            <input class="form-control column" type="url" name="intro" id="intro" value="{{ p[6] }}" required>
+            <input class="form-control column" type="url" name="intro" id="intro" value="{{ p[5] }}" required>
         </div>
         <div class="ettrow">
             <div class="column"></div>

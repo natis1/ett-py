@@ -17,53 +17,21 @@
     </div>
     <div class="ettrow">
         <div class="column">
-            <a class="btn btn-primary" href="{{ c[23] }}" target="_blank">Discord Link</a>
+            <a class="btn btn-primary" href="{{ c[16] }}" target="_blank">Discord Link</a>
         </div>
         <div class="column">
-            <a class="btn btn-primary column" href="{{ c[24] }}" target="_blank">Character Image</a>
+            <a class="btn btn-primary column" href="{{ c[17] }}" target="_blank">Character Image</a>
         </div>
     </div>
     <br>
     <div class="ettrow">
         <div class="column">
-            <a class="btn {% if c[13] %}btn-primary{% else %}btn-danger{% endif %}" href="{{ c[13] }}" target="_blank">FVTT File</a>
+            <a class="btn {% if c[12] %}btn-primary{% else %}btn-danger{% endif %}" href="{{ c[12] }}" target="_blank">FVTT File</a>
 
         </div>
         <div class="column">
-            <a class="btn {% if c[12] %}btn-primary{% else %}btn-danger{% endif %}" href="{{ c[12] }}" target="_blank">PDF File</a>
+            <a class="btn {% if c[11] %}btn-primary{% else %}btn-danger{% endif %}" href="{{ c[11] }}" target="_blank">PDF File</a>
         </div>
-    </div>
-    <br>
-
-
-    <div class="ettrow">
-        <label for="level_2" class="column">Current Level:</label>
-        <input class="form-control column" type="number" id="level_2" name="level"
-               value="{{ e[0] }}" readonly>
-    </div>
-    <div class="ettrow">
-        <label for="XP" class="column">XP:</label>
-        <input class="form-control column" type="number" id="XP" name="XP" value="{{ c[14] }}" readonly>
-    </div>
-
-
-    <div class="ettrow">
-        <label for="CS" class="column">Community Service:</label>
-        <input class="form-control column" type="number" id="CS" name="CS" value="{{ c[11] }}" readonly>
-    </div>
-
-    <div class="ettrow">
-        <label for="c_gold" class="column">Current Gold:</label>
-        <input class="form-control column" id="c_gold" name="gold" step="0.01" value="{{ c[16] }}" type="number" readonly>
-    </div>
-    <div class="ettrow">
-        <label for="inventory" class="column">Current Inventory:</label>
-        <select multiple size="6" class="form-control column" name="inventory" id="inventory" readonly>
-            {% for i in e[8] %}
-            <option value="{{ i.name }}">{% if i.quantity > 1 %}{{ i.quantity }}{% endif %}
-                {{ i.name }} - {{ i.level }} - {{ i.cost }}gp</option>
-            {% endfor %}
-        </select>
     </div>
     <br>
 
@@ -85,37 +53,26 @@
     </div>
     <div class="ettrow">
         <label for="subclass" class="column">Subclass:</label>
-        <input class="form-control column" name="subclass" id="subclass" value="{{ c[22] }}" readonly>
+        <input class="form-control column" name="subclass" id="subclass" value="{{ c[15] }}" readonly>
     </div>
     <div class="ettrow">
         <label for="home" class="column">Home:</label>
         <input class="form-control column" name="home" id="home" value="{{ c[8] }}" readonly>
     </div>
     <div class="ettrow">
-        <label for="ironman" class="column">Ironman Mode:</label>
-        <input class="form-control column" name="ironman" id="ironman" readonly
-               {% if c[20] == 0 %}value="None"{% endif %} {% if c[20] == 1 %}value="Permadeath (A)"{% endif %}
-               {% if c[20] == 2 %}value="No Community Service (B)"{% endif %} {% if c[20] == 3 %}value="Longer Community Service (C)"{% endif %}>
-    </div>
-    <div class="ettrow">
         <label for="comments" class="small_column">Comments:</label>
         <textarea class="form-control big_column" rows="3" id="comments" name="comments" readonly>{{ c[10] }}</textarea>
-    </div>
-    <div class="ettrow">
-        <label for="karma" class="column">Current Karma:</label>
-        <input class="form-control column" name="karma" id="karma"
-               type="number" value="{{ e[5] }}" readonly>
     </div>
 
     <div class="ettrow">
         <label for="t_rares" class="column">Rare Unlocks Available:</label>
         <input class="form-control column" name="t_rares" id="t_rares" step="1"
-               type="number" value="{{ e[3] }}" readonly>
+               type="number" value="{{ e[0] }}" readonly>
     </div>
     <div class="ettrow">
         <label for="rares_used" class="column">Rare Unlocks Used:</label>
         <input class="form-control column" step="1" type="number" id="rares_used" name="rares_used"
-               min="0" value="{{ e[2] }}" readonly>
+               min="0" value="{{ e[5] }}" readonly>
     </div>
 
 

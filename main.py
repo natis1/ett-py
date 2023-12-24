@@ -26,6 +26,8 @@ if __name__ == '__main__':
         app.run(debug=False, port=int(sys.argv[1]))
     else:
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+        website.auth.DEBUG = True
+        print("WARNING: DO NOT RUN IN A PRODUCTION ENVIRONMENT. DEBUG ENABLED.")
         app.run(debug=True)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

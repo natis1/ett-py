@@ -6,7 +6,6 @@ from flask import Blueprint, render_template, request, redirect, abort, flash
 from flask_login import current_user, login_required
 from src import database, ett
 from src.database import CHARACTERS, PLAYERS, GAMES
-from website import views
 
 api = Blueprint('api', __name__)
 API_VERSION = "1"
@@ -68,9 +67,8 @@ def characters():
         outdict = {'PlayerName': data[CHARACTERS.PlayerName], 'Name': data[CHARACTERS.Name],
                    'Ancestry': data[CHARACTERS.Ancestry],
                    'Class': data[CHARACTERS.Class],
-                   'XP': round(data[CHARACTERS.XP], 2), 'Level': ett.get_level(data[CHARACTERS.XP]),
-                   'CurrentGold': round(data[CHARACTERS.CurrentGold], 2),
-                   'Subclass': data[CHARACTERS.Subclass]}
+                   'Subclass': data[CHARACTERS.Subclass],
+                   'NrGames': data[CHARACTERS.NrGames]}
         out_table += [outdict]
 
     return {
@@ -89,8 +87,8 @@ def players():
     for data in table:
         chars = len(database.string_list_to_list(data[PLAYERS.Characters]))
         max_chars = ett.get_available_slots(data[PLAYERS.Upgrades], [])
-        out_dict = {'PlayerName': data[PLAYERS.PlayerName], 'Karma': data[PLAYERS.Karma],
-                    'Chars': str(chars) + " / " + str(max_chars)}
+        out_dict = {'PlayerName': data[PLAYERS.PlayerName], 'Karma': int(data[PLAYERS.Karma]),
+                    'Chars': str(chars) + " / " + str(max_chars), 'NrGames': data[PLAYERS.NrGames]}
         out_table += [out_dict]
     return {
         'data': out_table,
@@ -106,7 +104,7 @@ def adventures():
     count, total, table = database.get_games_table(q[0], q[1], q[2], q[3])
     out_table = []
     for data in table:
-        out_dict = {'Name': data[1], 'Date': data[2], 'GM': data[7], 'Time': data[4], 'GameLevel': data[5]}
+        out_dict = {'Name': data[1], 'Date': data[2], 'GM': data[6], 'Time': data[4], 'GameLevel': data[5]}
         out_table += [out_dict]
     return {
         'data': out_table,
@@ -600,46 +598,6 @@ def edit_character_add_unlock():
     if err:
         flash("ERROR: " + err, "error")
     return redirect("/edit_character", code=307)
-
-
-@api.route('/edit_character_xpcs', methods=['POST'])
-@login_required
-def edit_character_xpcs():
-    xp = request.form.get("XP", type=float)
-    cs = request.form.get("CS", type=float)
-    if xp is None or cs is None:
-        return api_error()
-    cur_char = get_character()
-    if not cur_char:
-        return api_error()
-    gold_change = ett.ett_gold_add_xp(cur_char[CHARACTERS.XP], xp - cur_char[CHARACTERS.XP])
-    cur_char[CHARACTERS.CurrentGold] += gold_change
-    # Reset expected gold to normal amount just in case
-    # it got messed up by some other change made.
-    cur_char[CHARACTERS.ExpectedGold] = ett.STARTING_GOLD + ett.ett_gold_add_xp(0, xp)
-    cur_char[CHARACTERS.XP] = xp
-    cur_char[CHARACTERS.CommunityService] = cs
-    err = database.edit_character(cur_char)
-    if err:
-        flash("ERROR: " + err, "error")
-    return redirect("/edit_character", code=307)
-
-
-@api.route('/edit_character_modify_gold', methods=['POST'])
-@login_required
-def edit_character_modify_gold():
-    gold = request.form.get("gold", type=float)
-    if gold is None:
-        return api_error()
-    cur_char = get_character()
-    if not cur_char:
-        return api_error()
-    cur_char[CHARACTERS.CurrentGold] = gold
-    err = database.edit_character(cur_char)
-    if err:
-        flash("ERROR: " + err, "error")
-    return redirect("/edit_character", code=307)
-
 
 @api.route('/edit_adventure_name', methods=['POST'])
 @login_required

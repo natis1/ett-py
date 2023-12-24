@@ -28,12 +28,7 @@ def add_player_post():
         karma = 1
     else:
         karma = int(karma)
-    xp = data.get('xp')
-    if xp == '':
-        xp = 0
-    else:
-        xp = float(xp)
-    database.add_player(data.get('playerName'), current_user.name, karma, xp, discord)
+    database.add_player(data.get('playerName'), current_user.name, karma, discord)
     return redirect('/players')
 
 
@@ -47,7 +42,6 @@ def view_player():
         flash("API ERROR viewing player: " + request.form.get("PlayerName"), "error")
         return redirect("/players")
     player = list(player)
-    player[PLAYERS.BonusXP] = round(player[PLAYERS.BonusXP], 2)
     upgrades = ett.string_to_pf2e_element_list(player[PLAYERS.Upgrades])
     chars = database.string_list_to_list(player[PLAYERS.Characters])
     char_num = len(chars)
@@ -66,10 +60,7 @@ def edit_player():
     if not player:
         flash("API ERROR viewing player: " + request.form.get("PlayerName"), "error")
         return redirect("/players")
-    player = list(player)
-    player[PLAYERS.BonusXP] = round(player[PLAYERS.BonusXP], 2)
     danger = bool(request.form.get("danger"))
-    player = database.get_player(request.form.get("PlayerName"))
     my_chars = database.string_list_to_list(player[PLAYERS.Characters])
     karma = ett.string_to_pf2e_element_list(player[PLAYERS.Upgrades])
     ch = database.get_table("Characters", ["PlayerName", "Name"])
@@ -104,17 +95,10 @@ def view_character():
     total_rares = 1
     rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
     unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
-    inventory = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
-    # Round to fix html problems
-    character[CHARACTERS.ExpectedGold] = round(character[CHARACTERS.ExpectedGold], 2)
-    character[CHARACTERS.CurrentGold] = round(character[CHARACTERS.CurrentGold], 2)
-    character[CHARACTERS.XP] = round(character[CHARACTERS.XP], 2)
     for i in rewards:
         if i.name == "Skeleton Key":
             total_rares += i.quantity
-    rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
-    extra = (ett.get_level(character[CHARACTERS.XP]), rare_unlocks, len(rare_unlocks),
-             total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
+    extra = (total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, len(unlocks))
 
     return render_template("view_character.html", user=current_user, c=character, e=extra)
 
@@ -138,17 +122,10 @@ def edit_character():
     total_rares = 1
     rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
     unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
-    inventory = ett.string_to_pf2e_element_list(character[CHARACTERS.Items])
-    # Round to fix html problems
-    character[CHARACTERS.ExpectedGold] = round(character[CHARACTERS.ExpectedGold], 2)
-    character[CHARACTERS.CurrentGold] = round(character[CHARACTERS.CurrentGold], 2)
-    character[CHARACTERS.XP] = round(character[CHARACTERS.XP], 2)
     for i in rewards:
         if i.name == "Skeleton Key":
             total_rares += i.quantity
-    rare_unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Rares])
-    extra = (ett.get_level(character[CHARACTERS.XP]), rare_unlocks, len(rare_unlocks),
-             total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, inventory, rare_unlocks)
+    extra = (total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks)
 
     return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra, danger=danger)
 
@@ -169,28 +146,18 @@ def add_character_post():
     pb = data.get("pathbuilder")
     if not region:
         region = 'Tavern Region'
-    xp = data.get('xp')
-    if xp == '':
-        xp = 0
-    else:
-        xp = float(xp)
     pdf_urls = data.get('pdf')
     if not pdf_urls:
         pdf_urls = ''
     fvtt_urls = data.get('fvtt')
     if not fvtt_urls:
         fvtt_urls = ''
-    gold = data.get('gold')
-    if not gold:
-        gold = 15
-    gold = float(gold)
     if not pb:
         pb = ''
     err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
                                  data.get("background"), data.get("class"), data.get("heritage"),
-                                 pb, int(data.get("ironman")), region, xp,
-                                 data.get("subclass"), data.get("discord"), data.get("picture"),
-                                 pdf_urls, fvtt_urls, gold)
+                                 pb, region, data.get("subclass"), data.get("discord"), data.get("picture"),
+                                 pdf_urls, fvtt_urls)
     if err:
         flash("ERROR ADDING CHARACTER: " + err, "error")
     return redirect('/characters')
@@ -232,42 +199,17 @@ def parse_button(button: list):
 @login_required
 def add_adventure_post():
     print(request.form)
-    items = []
-    items_name = request.form.getlist('items[][name]')
-    items_level = request.form.getlist('items[][level]')
-    items_rarity = request.form.getlist('items[][rarity]')
-    items_num = request.form.get('itemsNr')
-    if not items_num:
-        items_num = 0
-    else:
-        items_num = int(items_num)
-
     players_num = int(request.form.get('playersNr'))
-    for i in range(0, items_num):
-        itm = ett.Pf2eElement(items_name[i], int(items_level[i]), 0, int(items_rarity[i]))
-        items += [itm]
-
     gm_player_name = request.form.get('gm')
-    gm_game_time = float(request.form.get('time'))
 
-    player_list = [ett.EttGamePlayer(gm_player_name, '', 0, gm_game_time, 0, True)]
+    player_list = [ett.EttGamePlayer(gm_player_name, '', 1)]
     player_names = request.form.getlist('players[][name]')
-    player_levels = request.form.getlist('players[][level]')
-    player_times = request.form.getlist('players[][time]')
-    player_karma = parse_button(request.form.getlist('players[][karma]', int))
-    player_tt = parse_button(request.form.getlist('players[][ttcost]', int))
+    game_level = int(request.form.get('gamelevel'))
 
-    player_died = parse_button(request.form.getlist('players[][died]', int))
     for i in range(0, players_num):
         pl_name = player_names[i]
         pl_name_split = pl_name.split("|", 1)
-        actual_pl = database.get_player(pl_name_split[0])
-        if actual_pl is not None:
-            actual_pl = list(actual_pl)
-            if ett.get_ultimate_tt(actual_pl[PLAYERS.Upgrades]):
-                player_tt[i] = 0
-        pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], int(player_levels[i]),
-                               float(player_times[i]), int(player_karma[i] - player_tt[i]), not bool(player_died[i]))
+        pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], 1)
         player_list += [pl]
 
     game_name = request.form.get('gameName')
@@ -280,15 +222,15 @@ def add_adventure_post():
         submit_only = 0
 
     if request.endpoint == 'views.add_adventure_submit':
-        err = database.add_game(game_name, game_date, game_length, items,
-                                player_list, game_comments, current_user.name, submit_only)
+        err = database.add_game(game_name, game_date, game_length,
+                                player_list, game_comments, current_user.name, submit_only, game_level)
         if err is not None:
             flash("API ERROR: " + err, "error")
 
         return redirect('/adventures')
     else:
-        return database.add_game(game_name, game_date, game_length, items,
-                                 player_list, game_comments, current_user.name, 1)
+        return database.add_game(game_name, game_date, game_length,
+                                 player_list, game_comments, current_user.name, 1, game_level)
 
 
 @views.route('/edit_adventure', methods=['POST', 'GET'])

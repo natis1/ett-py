@@ -10,8 +10,8 @@
     <div class="column">{{ p[1] }}</div>
 </div>
 
-{% if p[6] %}
-<button type='button' class="btn btn-success" onclick="window.open('{{ p[6] }}')">Player Intro</button>
+{% if p[5] %}
+<button type='button' class="btn btn-success" onclick="window.open('{{ p[5] }}')">Player Intro</button>
 {% endif %}
 <div class="ettrow">
     <div class="column">Characters Used: </div>
@@ -33,11 +33,5 @@
     {% endfor %}
 </ul>
 {% endif %}
-
-<br>
-<div class="ettrow">
-    <div class="column">Unassigned GM XP: </div>
-    <div class="column">{{ p[3] }}</div>
-</div>
 
 {% endblock %}

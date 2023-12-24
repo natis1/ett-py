@@ -11,9 +11,7 @@
         <th scope="col">Ancestry</th>
         <th scope="col">Class</th>
         <th scope="col">Subclass</th>
-        <th scope="col">XP</th>
-        <th scope="col">Level</th>
-        <th scope="col">Gold</th>
+        <th scope="col">Games</th>
         <th width="5%" scope="col"></th>
         {% if user.is_authenticated %}
         <th width="5%" scope="col"></th>
@@ -40,9 +38,7 @@
           {data: 'Ancestry'},
           {data: 'Class'},
           {data: 'Subclass'},
-          {data: 'XP'},
-          {data: 'Level', orderable: false},
-          {data: 'CurrentGold'},
+          {data: 'NrGames'},
           {defaultContent: '<button id="view" class="btn btn-primary">View</button>', orderable: false}
           {% if user.is_authenticated %},
           {defaultContent: '<button id="edit" type="submit" class="btn btn-danger">Edit</button>', orderable: false}

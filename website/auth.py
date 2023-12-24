@@ -9,7 +9,7 @@ from src import database
 auth = Blueprint('auth', __name__)
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
 client = WebApplicationClient(key.GOOGLE_CLIENT_ID)
-
+DEBUG = False
 
 class User(UserMixin):
     def __init__(self, user_id, name, permissions):
@@ -49,6 +49,11 @@ def login():
 
 @auth.route("/login/callback")
 def callback():
+    if DEBUG:
+        user = User.get("116833431087297339893")
+        login_user(user, remember=False)
+        return redirect("/")
+
     # Get authorization code Google sent back to you
     code = request.args.get("code")
     if code is None:
