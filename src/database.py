@@ -24,6 +24,7 @@ class PLAYERS(IntEnum):
     Enterer = 4
     DiscordIntro = 5
     NrGames = 6
+    Hours = 7
 
 
 class CHARACTERS(IntEnum):
@@ -46,6 +47,8 @@ class CHARACTERS(IntEnum):
     DiscordLink = 16
     Picture = 17
     NrGames = 18
+    Archetype = 19
+    Hours = 20
 
 
 class GAMES(IntEnum):
@@ -282,11 +285,19 @@ def reindex():
         games_list = []
         for j in games:
             games_list += [j[EVENTS.RelatedID]]
+
         existing_games = string_list_to_list(i[CHARACTERS.Games])
         games_list += existing_games
         deduplicated = list(set(games_list))
+        ch_hours = 0
+        for j in deduplicated:
+            game = sql_exec("SELECT * FROM games WHERE ID = ?", (j,), Fetch.ONE)
+            ch_hours += game[GAMES.Time]
+
         i[CHARACTERS.Games] = list_to_string(deduplicated)
         i[CHARACTERS.NrGames] = len(deduplicated)
+        i[CHARACTERS.Hours] = ch_hours
+        print("Character: " + i[CHARACTERS.Name] + " has: " + str(ch_hours) + " hours logged in games.")
         edit_character(i)
 
     # Clean up invalid characters
@@ -296,12 +307,18 @@ def reindex():
         nr_games = 0
         chars = sql_exec("SELECT * FROM characters WHERE PlayerName = ?", (i[PLAYERS.PlayerName],), Fetch.ALL)
         char_list = []
+        ch_hours = 0
         for j in chars:
             char_list += [j[CHARACTERS.Name]]
             nr_games += j[CHARACTERS.NrGames]
+            ch_hours += j[CHARACTERS.Hours]
 
         gm_games = sql_exec("SELECT * FROM events WHERE PlayerName = ? and CharacterName = '' and RelatedID != '' ",
                             (i[PLAYERS.PlayerName], ), Fetch.ALL)
+        gm_hours = 0
+        for j in gm_games:
+            game = sql_exec("SELECT * FROM games WHERE ID = ?", (j[EVENTS.RelatedID], ), Fetch.ONE)
+            gm_hours += game[GAMES.Time]
 
         gm_games_ct = len(list(gm_games))
         print("GM: " + i[PLAYERS.PlayerName] +
@@ -310,6 +327,7 @@ def reindex():
 
         i[PLAYERS.Characters] = list_to_string(char_list)
         i[PLAYERS.NrGames] = nr_games + gm_games_ct
+        i[PLAYERS.Hours] = gm_hours + ch_hours
         edit_player(i)
     sql_exec("VACUUM")
 
@@ -417,6 +435,34 @@ def init_db():
         reindex()
         sql_exec("PRAGMA user_version = 4")
 
+    # V5, add hours to players and characters, and archetype to characters
+    if user_version < 5:
+        sql_exec("ALTER TABLE characters RENAME TO characters_V4")
+        sql_exec("ALTER TABLE players RENAME TO players_V4")
+        sql_exec("CREATE TABLE IF NOT EXISTS players(PlayerName COLLATE NOCASE, Karma, Characters, Upgrades, "
+                 "Enterer, DiscordIntro, NrGames, Hours, PRIMARY KEY(PlayerName))")
+        sql_exec("CREATE TABLE IF NOT EXISTS characters(PlayerName COLLATE NOCASE, Name COLLATE NOCASE, Ancestry, "
+                 "Background, Class, Heritage, Unlocks, Rewards, Home, Pathbuilder, Comments, "
+                 "PDFs, FVTTs, Games, Enterer, Subclass, "
+                 "DiscordLink, Picture, NrGames, Archetype, Hours, PRIMARY KEY(PlayerName, Name))")
+        sql_exec("INSERT OR IGNORE INTO players(PlayerName, Karma, Characters, "
+                 "Upgrades, Enterer, DiscordIntro, NrGames)"
+                 " SELECT PlayerName, Karma, Characters, "
+                 "Upgrades, Enterer, DiscordIntro, NrGames FROM players_V4")
+        sql_exec("INSERT OR IGNORE INTO characters(PlayerName, Name, "
+                 "Ancestry, Background, Class, Heritage, Unlocks, Rewards, "
+                 "Home, Pathbuilder, Comments, PDFs, FVTTs, Games, Enterer, "
+                 "Subclass, DiscordLink, Picture, NrGames) SELECT PlayerName, Name, "
+                 "Ancestry, Background, Class, Heritage, Unlocks, Rewards, "
+                 "Home, Pathbuilder, Comments, PDFs, FVTTs, Games, Enterer, "
+                 "Subclass, DiscordLink, Picture, NrGames FROM characters_V4")
+        sql_exec("DROP TABLE players_V4")
+        sql_exec("DROP TABLE characters_V4")
+        # Reindex required to calculate hours from games played.
+        reindex()
+        sql_exec("PRAGMA user_version = 5")
+
+
 
 def get_player(name):
     return sql_exec("""
@@ -432,7 +478,7 @@ def add_player(name, enterer, starting_karma: int = 0, discord: str = ''):
     print("Adding Player " + name)
     sql_exec("""
         INSERT INTO players VALUES
-        (?, ?, '', '', ?, ?, 0)
+        (?, ?, '', '', ?, ?, 0, 0)
     """, (name, starting_karma, enterer, discord))
 
 
@@ -444,7 +490,7 @@ def get_character(player_name, name):
 
 def add_character(player_name, enterer, name, ancestry, background, pc_class, heritage, pathbuilder, home='',
                   subclass: str = '', discord_link: str = '', picture: str = '',
-                  pdf_url: str = '', fvtt_url: str = ''):
+                  pdf_url: str = '', fvtt_url: str = '', archetype: str = ''):
     if subclass is None:
         subclass = ''
     p = get_player(player_name)
@@ -469,9 +515,9 @@ def add_character(player_name, enterer, name, ancestry, background, pc_class, he
 
     sql_exec("""
         INSERT INTO characters VALUES
-        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', ?, ?, '', ?, ?, ?, ?, 0)""",
+        (?, ?, ?, ?, ?, ?, '', '', ?, ?, '', ?, ?, '', ?, ?, ?, ?, 0, ?, 0)""",
              (player_name, name, ancestry, background, pc_class, heritage, home, pathbuilder,
-              pdf_url, fvtt_url, enterer, subclass, discord_link, picture))
+              pdf_url, fvtt_url, enterer, subclass, discord_link, picture, archetype))
 
 
 def get_game(name, date):
@@ -585,7 +631,7 @@ def edit_player(player: list):
     # move playername to the end so that query works
     player = player[1:] + player[:1]
     sql_exec("""UPDATE players SET Karma = ?, Characters = ?,
-    Upgrades = ?, Enterer = ?, DiscordIntro = ?, NrGames = ?
+    Upgrades = ?, Enterer = ?, DiscordIntro = ?, NrGames = ?, Hours = ?
     WHERE PlayerName = ?
     """, tuple(player))
 
@@ -608,7 +654,7 @@ def edit_character(character: list):
     sql_exec("""UPDATE characters SET Ancestry = ?, Background = ?, Class = ?, Heritage = ?,
         Unlocks = ?, Rewards = ?, Home = ?, Pathbuilder = ?, Comments = ?,
         PDFs = ?, FVTTs = ?, Games = ?, 
-        Enterer = ?, Subclass = ?, DiscordLink = ?, Picture = ?, NrGames = ?
+        Enterer = ?, Subclass = ?, DiscordLink = ?, Picture = ?, NrGames = ?, Archetype = ?, Hours = ?
         WHERE PlayerName = ? and Name = ?
     """, tuple(character))
 

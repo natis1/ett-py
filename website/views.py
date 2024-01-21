@@ -157,7 +157,7 @@ def add_character_post():
     err = database.add_character(data.get("playerName"), current_user.name, data.get("name"), data.get("ancestry"),
                                  data.get("background"), data.get("class"), data.get("heritage"),
                                  pb, region, data.get("subclass"), data.get("discord"), data.get("picture"),
-                                 pdf_urls, fvtt_urls)
+                                 pdf_urls, fvtt_urls, data.get("archetype"))
     if err:
         flash("ERROR ADDING CHARACTER: " + err, "error")
     return redirect('/characters')

@@ -24,16 +24,17 @@ STARTING_SLOTS = 5
 STARTING_KARMA = 1
 NEW_FACE_BASE_COST = 5
 NEW_FACE_COST_PER = 1
+NEW_FACE_FIXED_COST = True
 # for karma - name = name, level = cost (sorry),
 # rarity = 0 -> instant consumable, 1 -> character, 2 -> player
-KARMA_REWARDS = [Pf2eElement("Mini Rework", 1), Pf2eElement("Full Rework", 2),
-                 Pf2eElement("Bulk Retrain", 1),
+KARMA_REWARDS = [Pf2eElement("Mini Rework", 1), Pf2eElement("Full Rework", 3),
+                 Pf2eElement("Return Policy (Specify cost as quantity)", 1),
                  Pf2eElement("Look What I Found", 4), Pf2eElement("Personal Staff", 5, rarity = 1),
                  Pf2eElement("PS Uncommon Spell", 2, rarity = 1), Pf2eElement("PS Rare Spell", 4, rarity = 1),
                  Pf2eElement("Skeleton Key", level=6, rarity=1), Pf2eElement("No Interest Loan", 10),
-                 Pf2eElement("True Time Traveler", level=50, rarity=2), Pf2eElement("New Big Friend", 50),
                  Pf2eElement("New Face", rarity=2),
-                 Pf2eElement("Ultima Key", level=50, rarity=2)
+                 Pf2eElement("Family Heirloom", level=10, rarity=1),
+                 Pf2eElement("Upgrade Please", level=10, rarity=1)
                  ]
 
 
@@ -44,6 +45,9 @@ def get_new_face_karma_cost(new_face: Pf2eElement, upgrades: str):
         if i.name == "New Face":
             new_faces += i.quantity
             break
+    # New Face now has fixed cost
+    if NEW_FACE_FIXED_COST:
+        return new_faces * NEW_FACE_BASE_COST
     # Karma to buy the first newface
     start_cost = NEW_FACE_BASE_COST + (new_faces * NEW_FACE_COST_PER)
     # Karma to buy the one after the last newface

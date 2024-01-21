@@ -44,6 +44,11 @@
         <input class="form-control column" name="subclass" id="subclass" maxlength="32"
                minlength="2" placeholder="Battledancer">
         </div>
+        <div class="ettrow required">
+        <label for="archetype" class="column">First Archetype:</label>
+        <input class="form-control column" name="archetype" id="archetype" maxlength="32"
+               minlength="2" placeholder="Medic" required>
+        </div>
         <div class="ettrow">
         <label for="pathbuilder" class="column">Pathbuilder URL:</label>
         <input class="form-control column" name="pathbuilder" id="pathbuilder"
@@ -60,15 +65,6 @@
                type="url" placeholder="https://i.imgur.com/OE8PK03.jpg">
         </div>
         <div class="ettrow">
-        <label for="ironman" class="column">Ironman Mode:</label>
-        <select class="form-control column" id="ironman" name="ironman" required>
-            <option value="0">None</option>
-            <option value="1">Permadeath (A)</option>
-            <option value="2">No Community Service (B)</option>
-            <option value="3">Longer Community Service (C)</option>
-        </select>
-        </div>
-        <div class="ettrow">
         <label for="home" class="column">Home:</label>
         <input class="form-control column" name="home" id="home" maxlength="32"
                minlength="2" placeholder="Tavern Region">
@@ -82,14 +78,6 @@
         <label for="fvtt" class="column">FVTT URL:</label>
         <input class="form-control column" name="fvtt" id="fvtt"
                type="url" placeholder="https://example.com/my_fvtt.json">
-        </div>
-        <div class="ettrow">
-        <label for="xp" class="column">Starting XP</label>
-        <input class="form-control column" step="0.01" type="number" id="xp" name="xp" min="0" max="8000" placeholder="0">
-        </div>
-        <div class="ettrow">
-        <label for="gold" class="column">Starting Gold</label>
-        <input class="form-control column" step="0.01" type="number" id="gold" name="gold" min="0" max="8000" placeholder="15">
         </div>
 
     </div>
