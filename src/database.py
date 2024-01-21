@@ -122,11 +122,12 @@ SAFE_PLAYER_COLUMNS = ['PlayerName', 'Karma', 'Characters', 'Upgrades', 'Enterer
                        'PlayerName desc', 'Karma desc', 'Characters desc',
                        'Upgrades desc', 'Enterer desc', 'NrGames desc', 'Hours desc']
 SAFE_CHARACTER_COLUMNS = ['PlayerName', 'Name', 'Ancestry', 'Background', 'Class', 'Heritage',
-                          'Unlocks', 'Rewards', 'Home', 'Enterer', 'NrGames', 'Hours',
+                          'Unlocks', 'Rewards', 'Home', 'Enterer', 'NrGames', 'Hours', 'Archetype',
                           'PlayerName desc', 'Name desc', 'Ancestry desc',
                           'Background desc', 'Class desc',
                           'Heritage desc', 'Unlocks desc', 'Rewards desc', 'Home desc',
-                          'Enterer desc', 'Subclass', 'Subclass desc', 'NrGames desc', 'Hours desc']
+                          'Enterer desc', 'Subclass', 'Subclass desc', 'NrGames desc', 'Hours desc',
+                          'Archetype desc']
 SAFE_GAME_COLUMNS = ['ID', 'Name', 'Date', 'Enterer', 'Time', 'GameLevel', 'GM',
                      'ID desc', 'Name desc', 'Date desc', 'Enterer desc', 'Time desc', 'GameLevel desc', 'GM desc']
 

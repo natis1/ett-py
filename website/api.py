@@ -69,6 +69,7 @@ def characters():
                    'Class': data[CHARACTERS.Class],
                    'Subclass': data[CHARACTERS.Subclass],
                    'NrGames': data[CHARACTERS.NrGames],
+                   'Archetype': data[CHARACTERS.Archetype],
                    'Hours': data[CHARACTERS.Hours]}
         out_table += [outdict]
 
