@@ -68,7 +68,8 @@ def characters():
                    'Ancestry': data[CHARACTERS.Ancestry],
                    'Class': data[CHARACTERS.Class],
                    'Subclass': data[CHARACTERS.Subclass],
-                   'NrGames': data[CHARACTERS.NrGames]}
+                   'NrGames': data[CHARACTERS.NrGames],
+                   'Hours': data[CHARACTERS.Hours]}
         out_table += [outdict]
 
     return {
@@ -88,7 +89,8 @@ def players():
         chars = len(database.string_list_to_list(data[PLAYERS.Characters]))
         max_chars = ett.get_available_slots(data[PLAYERS.Upgrades], [])
         out_dict = {'PlayerName': data[PLAYERS.PlayerName], 'Karma': int(data[PLAYERS.Karma]),
-                    'Chars': str(chars) + " / " + str(max_chars), 'NrGames': data[PLAYERS.NrGames]}
+                    'Chars': str(chars) + " / " + str(max_chars), 'NrGames': data[PLAYERS.NrGames],
+                    'Hours': data[PLAYERS.Hours]}
         out_table += [out_dict]
     return {
         'data': out_table,

@@ -118,15 +118,15 @@ def sql_exec(sql, params=None, fetch: Fetch = Fetch.NONE):
     return result_queue.get()
 
 
-SAFE_PLAYER_COLUMNS = ['PlayerName', 'Karma', 'Characters', 'Upgrades', 'Enterer', 'NrGames',
+SAFE_PLAYER_COLUMNS = ['PlayerName', 'Karma', 'Characters', 'Upgrades', 'Enterer', 'NrGames', 'Hours'
                        'PlayerName desc', 'Karma desc', 'Characters desc',
-                       'Upgrades desc', 'Enterer desc', 'NrGames desc']
+                       'Upgrades desc', 'Enterer desc', 'NrGames desc', 'Hours desc']
 SAFE_CHARACTER_COLUMNS = ['PlayerName', 'Name', 'Ancestry', 'Background', 'Class', 'Heritage',
-                          'Unlocks', 'Rewards', 'Home', 'Enterer', 'NrGames'
-                                                                   'PlayerName desc', 'Name desc', 'Ancestry desc',
+                          'Unlocks', 'Rewards', 'Home', 'Enterer', 'NrGames', 'Hours',
+                          'PlayerName desc', 'Name desc', 'Ancestry desc',
                           'Background desc', 'Class desc',
                           'Heritage desc', 'Unlocks desc', 'Rewards desc', 'Home desc',
-                          'Enterer desc', 'Subclass', 'Subclass desc', 'NrGames desc']
+                          'Enterer desc', 'Subclass', 'Subclass desc', 'NrGames desc', 'Hours desc']
 SAFE_GAME_COLUMNS = ['ID', 'Name', 'Date', 'Enterer', 'Time', 'GameLevel', 'GM',
                      'ID desc', 'Name desc', 'Date desc', 'Enterer desc', 'Time desc', 'GameLevel desc', 'GM desc']
 

@@ -10,6 +10,7 @@
         <th scope="col">Karma</th>
         <th scope="col">Characters</th>
         <th scope="col">Games</th>
+        <th scope="col">Hours</th>
         <th width="5%" scope="col"></th>
         {% if user.is_authenticated %}
         <th width="5%" scope="col"></th>
@@ -38,6 +39,7 @@
           {data: 'Karma'},
           {data: 'Chars'},
           {data: 'NrGames'},
+          {data: 'Hours'},
           {defaultContent: '<button id="view" class="btn btn-primary">View</button>', orderable: false}
           {% if user.is_authenticated %},
           {defaultContent: '<button id="edit" type="submit" class="btn btn-danger">Edit</button>', orderable: false}
