@@ -31,7 +31,7 @@ KARMA_REWARDS = [Pf2eElement("Mini Rework", 1), Pf2eElement("Full Rework", 3),
                  Pf2eElement("Return Policy (Specify cost as quantity)", 1),
                  Pf2eElement("Look What I Found", 4), Pf2eElement("Personal Staff", 5, rarity = 1),
                  Pf2eElement("PS Uncommon Spell", 2, rarity = 1), Pf2eElement("PS Rare Spell", 4, rarity = 1),
-                 Pf2eElement("Skeleton Key", level=6, rarity=1), Pf2eElement("No Interest Loan", 10),
+                 Pf2eElement("Skeleton Key", level=5, rarity=1), Pf2eElement("No Interest Loan", 10),
                  Pf2eElement("New Face", rarity=2),
                  Pf2eElement("Family Heirloom", level=10, rarity=1),
                  Pf2eElement("Upgrade Please", level=10, rarity=1)
