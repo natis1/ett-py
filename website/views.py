@@ -203,14 +203,15 @@ def add_adventure_post():
     players_num = int(request.form.get('playersNr'))
     gm_player_name = request.form.get('gm')
 
-    player_list = [ett.EttGamePlayer(gm_player_name, '', 1)]
+    player_list = [ett.EttGamePlayer(gm_player_name, '', 2)]
     player_names = request.form.getlist('players[][name]')
+    player_karmas = parse_button(request.form.getlist('players[][karma]', int))
     game_level = int(request.form.get('gamelevel'))
 
     for i in range(0, players_num):
         pl_name = player_names[i]
         pl_name_split = pl_name.split("|", 1)
-        pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], 1)
+        pl = ett.EttGamePlayer(pl_name_split[0], pl_name_split[1], player_karmas[i])
         player_list += [pl]
 
     game_name = request.form.get('gameName')
