@@ -474,16 +474,13 @@ def edit_character_remove_unlock():
 @api.route('/edit_character_add_unlock', methods=['POST'])
 @login_required
 def edit_character_add_unlock():
-    name = request.form.get("unlock_name", type=str)
-    level = request.form.get("unlock_level", type=int)
-    cost = request.form.get("unlock_cost", type=float)
-    rarity = request.form.get("unlock_rarity", type=int)
-    if not name or level is None or cost is None or rarity is None:
+    name = request.form.get("buy_name", type=str)
+    if not name:
         return api_error()
     cur_char = get_character()
     if not cur_char:
         return api_error()
-    el = ett.Pf2eElement(name, level, cost, rarity)
+    el = ett.Pf2eElement(name, 0, 0, 2)
     cur_unlocks = ett.string_to_pf2e_element_list(cur_char[CHARACTERS.Unlocks])
     new_unlocks = ett.ett_parse_unlocks(cur_unlocks, [el], [])
     cur_char[CHARACTERS.Unlocks] = ett.pf2e_element_list_to_string(new_unlocks)

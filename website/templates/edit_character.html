@@ -145,6 +145,48 @@
             </div>
             <br>
         </form>
+        <div class="ettrow">
+                <label for="t_rares" class="column">Total Rare Unlocks:</label>
+                <input class="form-control column" name="t_rares" id="t_rares" step="1"
+                       type="number" value="{{ e[3] }}" readonly>
+        </div>
+        <div class="ettrow">
+                <label for="rares_used" class="column">Rare Unlocks Used:</label>
+                <input class="form-control column" step="1" type="number" id="rares_used" name="rares_used"
+                       min="0" value="{{ e[2] }}" readonly>
+        </div>
+        <form action="/api/edit_character_add_unlock" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <div class="ettrow">
+                <label for="buy_name" class="column">Rare to Unlock:</label>
+                <input class="form-control column" id="buy_name" name="buy_name" maxlength="32"
+                       minlength="2" required>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-success column">Add Rare</button>
+            </div>
+            <br>
+        </form>
+        <form class="danger" action="/api/edit_character_remove_unlock" method="POST">
+            <input type="hidden" name="PlayerName" value="{{ c[0] }}">
+            <input type="hidden" name="Name" value="{{ c[1] }}">
+            <input type="hidden" name="danger" value="X">
+            <div class="ettrow">
+                <label for="i_unlocks" class="column">Rare Unlocks:</label>
+                <select class="form-control column" name="i_unlocks" id="i_unlocks" step="1">
+                    {% for i in e[9] %}
+                    <option value="{{ i.name }}">{{ i.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ettrow">
+                <div class="column"></div>
+                <button type="submit" class="btn btn-warning column">Remove Unlocked Rare</button>
+            </div>
+            <br>
+        </form>
         <form action="/api/edit_character_karmabuy" method="POST">
             <input type="hidden" name="PlayerName" value="{{ c[0] }}">
             <input type="hidden" name="Name" value="{{ c[1] }}">
