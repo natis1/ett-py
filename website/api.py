@@ -274,7 +274,7 @@ def edit_character_core():
     archetype = request.form.get("archetype", type=str)
     comments = request.form.get("comments", type=str)
     if (not ancestry or not heritage or not background or not pc_class
-            or not home or ironman is None or comments is None):
+            or not home or comments is None):
         return api_error()
 
     cur_char = get_character()
