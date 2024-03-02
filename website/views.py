@@ -122,10 +122,11 @@ def edit_character():
     total_rares = 1
     rewards = ett.string_to_pf2e_element_list(character[CHARACTERS.Rewards])
     unlocks = ett.string_to_pf2e_element_list(character[CHARACTERS.Unlocks])
+    unlocks_used = len(unlocks)
     for i in rewards:
         if i.name == "Skeleton Key":
             total_rares += i.quantity
-    extra = (total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks)
+    extra = (total_rares, rewards, karma, ett.KARMA_REWARDS, unlocks, unlocks_used)
 
     return render_template("edit_character.html", user=current_user, players=pl, c=character, e=extra, danger=danger)
 
