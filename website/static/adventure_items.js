@@ -59,8 +59,54 @@ function addPlayers(characters) {
         minirow3.appendChild(karma_label);
         minirow3.appendChild(karma);
         minirow3.appendChild(karma_hidden);
-        row4.appendChild(minirow3);
-        row4.appendChild(minirow4);
+
+        var row5 = document.createElement("div");
+        row5.classList.add("ettrow");
+        var minirow1 = document.createElement("div");
+        minirow1.classList.add("column");
+        minirow1.classList.add("halfrow");
+        tt_label = document.createElement("label");
+        tt_label.innerHTML = "TT Karma:";
+        tt_label.classList.add('column');
+        // Hacky ass shit to let us use checkboxes here
+        var tt_hidden = document.createElement("input");
+        tt_hidden.type = "hidden";
+        tt_hidden.name = "players[][ttcost]";
+        tt_hidden.value = "0";
+        var tt_cost = document.createElement("input");
+        tt_cost.type = "checkbox";
+        tt_cost.value="1";
+        tt_cost.classList.add('column');
+        tt_cost.name = "players[][ttcost]";
+        minirow1.appendChild(tt_label);
+        minirow1.appendChild(tt_cost);
+        minirow1.appendChild(tt_hidden);
+        var minirow2 = document.createElement("div");
+        minirow2.classList.add("column");
+        minirow2.classList.add("halfrow");
+        minirow2.classList.add("custom-checkbox");
+        die_label = document.createElement("label");
+        die_label.innerHTML = "Died:";
+        die_label.classList.add('column');
+        // Hacky ass shit to let us use checkboxes here
+        var die_hidden = document.createElement("input");
+        die_hidden.type = "hidden";
+        die_hidden.name = "players[][died]";
+        die_hidden.value = "0";
+        var did_die = document.createElement("input");
+        did_die.type = "checkbox";
+        did_die.value = "1";
+        did_die.name = "players[][died]";
+        did_die.id = "players[][died]";
+        did_die.classList.add('column');
+
+        did_die.classList.add('cb-danger');
+        minirow2.appendChild(die_label);
+        minirow2.appendChild(did_die);
+        minirow2.appendChild(die_hidden);
+
+        row4.appendChild(minirow1);
+        row4.appendChild(minirow2);
         container.appendChild(row4);
 
         var br = document.createElement("br");
