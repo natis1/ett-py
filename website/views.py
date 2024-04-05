@@ -206,6 +206,9 @@ def add_adventure_post():
     player_list = [ett.EttGamePlayer(gm_player_name, '', 2)]
     player_names = request.form.getlist('players[][name]')
     player_karmas = parse_button(request.form.getlist('players[][karma]', int))
+    player_dies = parse_button(request.form.getlist('players[][died]', int))
+    for i in range(len(player_karmas)):
+        player_karmas[i] = player_karmas[i] - player_dies[i]
     game_level = int(request.form.get('gamelevel'))
 
     for i in range(0, players_num):

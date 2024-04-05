@@ -105,7 +105,7 @@ function addPlayers(characters) {
         minirow2.appendChild(did_die);
         minirow2.appendChild(die_hidden);
 
-        row4.appendChild(minirow1);
+        row4.appendChild(minirow3);
         row4.appendChild(minirow2);
         container.appendChild(row4);
 
