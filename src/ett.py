@@ -32,7 +32,7 @@ KARMA_REWARDS = [Pf2eElement("Mini Rework", 1), Pf2eElement("Full Rework", 3),
                  Pf2eElement("Look What I Found", 4), Pf2eElement("Personal Staff", 5, rarity = 1),
                  Pf2eElement("PS Uncommon Spell", 2, rarity = 1), Pf2eElement("PS Rare Spell", 4, rarity = 1),
                  Pf2eElement("Skeleton Key", level=5, rarity=1), Pf2eElement("No Interest Loan", 10),
-                 Pf2eElement("New Face", rarity=2),
+                 Pf2eElement("New Face", level=5, rarity=2),
                  Pf2eElement("Family Heirloom", level=10, rarity=1),
                  Pf2eElement("Upgrade Please", level=10, rarity=1)
                  ]
@@ -47,7 +47,7 @@ def get_new_face_karma_cost(new_face: Pf2eElement, upgrades: str):
             break
     # New Face now has fixed cost
     if NEW_FACE_FIXED_COST:
-        return new_faces * NEW_FACE_BASE_COST
+        return new_face.quantity * NEW_FACE_BASE_COST
     # Karma to buy the first newface
     start_cost = NEW_FACE_BASE_COST + (new_faces * NEW_FACE_COST_PER)
     # Karma to buy the one after the last newface

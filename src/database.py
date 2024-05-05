@@ -293,7 +293,11 @@ def reindex():
         ch_hours = 0
         for j in deduplicated:
             game = sql_exec("SELECT * FROM games WHERE ID = ?", (j,), Fetch.ONE)
-            ch_hours += game[GAMES.Time]
+            if game is None:
+                print("WARNING, INVALID GAME " + j)
+                sql_exec("DELETE FROM events WHERE RelatedID = ?", (j,))
+            else:
+                ch_hours += game[GAMES.Time]
 
         i[CHARACTERS.Games] = list_to_string(deduplicated)
         i[CHARACTERS.NrGames] = len(deduplicated)
@@ -319,7 +323,11 @@ def reindex():
         gm_hours = 0
         for j in gm_games:
             game = sql_exec("SELECT * FROM games WHERE ID = ?", (j[EVENTS.RelatedID], ), Fetch.ONE)
-            gm_hours += game[GAMES.Time]
+            if game is None:
+                print("WARNING, INVALID GAME " + j[EVENTS.RelatedID])
+                sql_exec("DELETE FROM events WHERE RelatedID = ?", (j[EVENTS.RelatedID],))
+            else:
+                gm_hours += game[GAMES.Time]
 
         gm_games_ct = len(list(gm_games))
         print("GM: " + i[PLAYERS.PlayerName] +
@@ -789,7 +797,7 @@ def delete_character(player_name: str, char_name: str):
         for i in c:
             if i != char_name:
                 new_list += [i]
-        pl[PLAYERS.Characters] = list_to_string(c)
+        pl[PLAYERS.Characters] = list_to_string(new_list)
         edit_player(pl)
     sql_exec("""
         DELETE FROM characters WHERE PlayerName = ? AND Name = ?
